@@ -319,7 +319,7 @@ class UnparsedMetadataScanner:
         print(f"📁 Recursive: {recursive}")
         print(f"📄 Extensions: {extensions}")
         print(f"📏 Min file size: {min_size_kb}KB ({min_size_kb * 1024:,} bytes)")
-        print(f"🐌 Slowdown detection threshold: {slowdown_threshold} files")
+        print(f"🐌 Slowdown detection window: {slowdown_threshold} files")
         print(f"🚀 Will ramp up to 300+/sec before monitoring for slowdowns below 200/sec")
         
         # Performance monitoring variables
@@ -328,17 +328,26 @@ class UnparsedMetadataScanner:
         ramp_up_target_rate = 300.0  # Target rate to reach before monitoring
         ramp_up_completed = False
         slow_detections = 0
-        max_slow_detections = 3  # Abort after 3 consecutive slow periods
+        max_slow_detections = 10  # Allow more slow periods before aborting (since we're blocking directories)
         
-        # Dynamic directory limiting
+        # Calculate individual file performance threshold
+        max_acceptable_time_ms = (1.0 / min_acceptable_rate) * 1000  # Convert to milliseconds
+        print(f"📏 Individual file threshold: {max_acceptable_time_ms:.1f}ms per file (for {min_acceptable_rate}/s rate)")
+        
+        # Dynamic directory foul tracking
         directory_file_counts = defaultdict(int)
         blocked_directories = set()  # Directories to skip due to performance
-        directory_slowdown_counts = defaultdict(int)  # Track slowdowns per directory
+        
+        # New: Dynamic directory foul system
+        directory_foul_counts = defaultdict(int)  # Track fouls per directory
+        recent_files_window = []  # Rolling window of recent file processing info
+        foul_threshold_per_directory = slowdown_threshold // 4  # Block after N fouls (25% of window)
+        
+        print(f"⚠️  Directory blocking: Will block directories with {foul_threshold_per_directory}+ fouls in {slowdown_threshold}-file window")
         
         # Collect all image files
         image_files = []
         skipped_small = 0
-        skipped_performance = 0
         
         if recursive:
             for root, dirs, files in os.walk(directory):
@@ -352,7 +361,6 @@ class UnparsedMetadataScanner:
                         
                         # Check if this directory has been performance-limited
                         if root in blocked_directories:
-                            skipped_performance += 1
                             continue
                         
                         # Check file size
@@ -397,7 +405,6 @@ class UnparsedMetadataScanner:
         unparsed_files = []
         start_time = time.time()
         last_100_start = start_time
-        processed_files = []  # Track recent file processing info
         
         i = 0
         while i < len(image_files):
@@ -413,14 +420,29 @@ class UnparsedMetadataScanner:
             result = self.scan_image_fast(image_path)
             self.stats['scanned_files'] += 1
             
-            # Track file processing info for performance analysis
-            processed_files.append({
-                'filename': image_path,
+            # Track file in rolling window
+            file_record = {
+                'filename': os.path.basename(image_path),
                 'directory': current_dir,
                 'parse_time_ms': result['parse_time_ms'],
                 'file_size': result['file_size'],
-                'index': i
-            })
+                'index': i,
+                'is_foul': result['parse_time_ms'] > max_acceptable_time_ms
+            }
+            recent_files_window.append(file_record)
+            
+            # Maintain rolling window size
+            if len(recent_files_window) > slowdown_threshold:
+                # Remove oldest record and subtract any fouls from directory counts
+                oldest_record = recent_files_window.pop(0)
+                if oldest_record['is_foul']:
+                    directory_foul_counts[oldest_record['directory']] -= 1
+                    if directory_foul_counts[oldest_record['directory']] <= 0:
+                        del directory_foul_counts[oldest_record['directory']]
+            
+            # Add foul to directory count if this file was slow
+            if file_record['is_foul']:
+                directory_foul_counts[current_dir] += 1
             
             if result['has_unparsed']:
                 unparsed_files.append(result)
@@ -468,47 +490,91 @@ class UnparsedMetadataScanner:
                               f"Rate: {window_rate:.1f}/s ({progress_pct:.0f}% of target) | "
                               f"Overall: {overall_rate:.1f}/s | Parse: {avg_parse_time:.1f}ms | ETA: {eta:.0f}s")
                 else:
-                    # Ramp-up completed - now monitor for slowdowns
+                    # Ramp-up completed - now monitor for slowdowns and directory fouls
                     if window_rate < min_acceptable_rate:
                         slow_detections += 1
+                        
+                        # Show current foul status for directories
+                        current_fouls = {d: count for d, count in directory_foul_counts.items() if count > 0}
+                        foul_summary = ", ".join([f"{os.path.basename(d)}:{count}" for d, count in sorted(current_fouls.items(), key=lambda x: x[1], reverse=True)[:3]])
+                        
                         print(f"🐌 SLOW WINDOW {slow_detections}/{max_slow_detections}: {i+1}/{len(image_files)} | "
                               f"Rate: {window_rate:.1f}/s (target: {min_acceptable_rate}/s) | "
                               f"Avg parse: {avg_parse_time:.1f}ms | ETA: {eta:.0f}s")
                         
-                        # Check if slowdown is due to a specific directory
-                        slowdown_analysis = self.detect_slow_directory(processed_files, slowdown_threshold)
+                        if foul_summary:
+                            print(f"   ⚠️  Directory fouls: {foul_summary}")
                         
-                        if slowdown_analysis['is_slow']:
-                            slow_dir = slowdown_analysis['directory']
-                            directory_slowdown_counts[slow_dir] += 1
+                        # Check for directories that need blocking
+                        directories_to_block = []
+                        for dir_path, foul_count in directory_foul_counts.items():
+                            if foul_count >= foul_threshold_per_directory and dir_path not in blocked_directories:
+                                directories_to_block.append((dir_path, foul_count))
+                        
+                        # Block problematic directories
+                        for dir_path, foul_count in directories_to_block:
+                            blocked_directories.add(dir_path)
                             
-                            print(f"   🎯 Slowdown detected in directory: {os.path.relpath(slow_dir)}")
-                            print(f"   📊 {slowdown_analysis['files_in_batch']}/{slowdown_threshold} recent files from this directory")
-                            print(f"   ⏱️  Avg parse time: {slowdown_analysis['avg_parse_time']:.1f}ms")
-                            print(f"   🐌 Slow file ratio: {slowdown_analysis['slow_file_ratio']*100:.1f}%")
+                            # Count remaining files in this directory
+                            remaining_files = sum(1 for path in image_files[i+1:] 
+                                                if os.path.dirname(path) == dir_path)
                             
-                            # Block directory after 2 slowdown detections
-                            if directory_slowdown_counts[slow_dir] >= 2:
-                                blocked_directories.add(slow_dir)
-                                
-                                # Count remaining files in this directory
-                                remaining_files = sum(1 for path in image_files[i+1:] 
-                                                    if os.path.dirname(path) == slow_dir)
-                                
-                                self.stats['performance_limited_directories'].append({
-                                    'directory': slow_dir,
-                                    'slowdown_count': directory_slowdown_counts[slow_dir],
-                                    'avg_parse_time': slowdown_analysis['avg_parse_time'],
-                                    'files_processed_before_block': directory_file_counts[slow_dir] - remaining_files,
-                                    'files_blocked': remaining_files,
-                                    'blocked_at_file_index': i + 1
-                                })
-                                
-                                print(f"   🚫 BLOCKING DIRECTORY: {os.path.relpath(slow_dir)}")
-                                print(f"   📂 Skipping {remaining_files} remaining files in this directory")
-                                
-                                # Reset slow detection counter since we resolved the issue
-                                slow_detections = 0
+                            # Calculate statistics for this directory
+                            dir_files_in_window = [f for f in recent_files_window if f['directory'] == dir_path]
+                            avg_dir_time = sum(f['parse_time_ms'] for f in dir_files_in_window) / len(dir_files_in_window) if dir_files_in_window else 0
+                            
+                            self.stats['performance_limited_directories'].append({
+                                'directory': dir_path,
+                                'foul_count': foul_count,
+                                'files_in_window': len(dir_files_in_window),
+                                'avg_parse_time': avg_dir_time,
+                                'files_processed_before_block': directory_file_counts[dir_path] - remaining_files,
+                                'files_blocked': remaining_files,
+                                'blocked_at_file_index': i + 1,
+                                'threshold_exceeded': f"{foul_count}/{foul_threshold_per_directory} fouls"
+                            })
+                            
+                            print(f"   🚫 BLOCKING DIRECTORY: {os.path.relpath(dir_path)}")
+                            print(f"   📊 Fouls: {foul_count}/{foul_threshold_per_directory} | "
+                                  f"Files in window: {len(dir_files_in_window)} | "
+                                  f"Avg time: {avg_dir_time:.1f}ms")
+                            print(f"   📂 Skipping {remaining_files} remaining files in this directory")
+                            
+                            # Reset slow detection counter since we took action
+                            slow_detections = max(0, slow_detections - 1)
+                        
+                        # Abort after too many consecutive slow periods without resolution
+                        if slow_detections >= max_slow_detections:
+                            print(f"\n🚨 ABORTING: {slow_detections} consecutive slow periods detected!")
+                            print(f"📊 Processed {i+1} files in {overall_elapsed:.1f}s before aborting")
+                            print(f"🐌 Current rate: {window_rate:.1f} files/second (target: {min_acceptable_rate})")
+                            print(f"🚫 Blocked {len(blocked_directories)} directories")
+                            
+                            # Store abort reason in stats
+                            self.stats['abort_reason'] = f"Processing rate remained below {min_acceptable_rate} files/sec despite blocking {len(blocked_directories)} directories"
+                            self.stats['aborted_at_file'] = i + 1
+                            self.stats['abort_time'] = overall_elapsed
+                            self.stats['ramp_up_completed'] = ramp_up_completed
+                            
+                            break
+                    else:
+                        # Reset slow detection counter if we're back to normal speed
+                        if slow_detections > 0:
+                            print(f"✅ Speed recovered: {window_rate:.1f}/s (was slow for {slow_detections} windows)")
+                        slow_detections = 0
+                        
+                        # Show foul status if there are active fouls
+                        if directory_foul_counts:
+                            active_fouls = sum(directory_foul_counts.values())
+                            status_emoji = "🔥" if window_rate > 300 else "⚡"
+                            print(f"{status_emoji} Progress: {i+1}/{len(image_files)} | "
+                                  f"Rate: {window_rate:.1f}/s | Overall: {overall_rate:.1f}/s | "
+                                  f"Parse: {avg_parse_time:.1f}ms | Active fouls: {active_fouls} | ETA: {eta:.0f}s")
+                        else:
+                            status_emoji = "🔥" if window_rate > 300 else "⚡"
+                            print(f"{status_emoji} Progress: {i+1}/{len(image_files)} | "
+                                  f"Rate: {window_rate:.1f}/s | Overall: {overall_rate:.1f}/s | "
+                                  f"Parse: {avg_parse_time:.1f}ms | ETA: {eta:.0f}s")
                 
                 # Reset window timer
                 last_100_start = current_time
@@ -530,6 +596,13 @@ class UnparsedMetadataScanner:
             print(f"\n🚫 PERFORMANCE BLOCKING SUMMARY:")
             print(f"📂 Blocked {len(blocked_directories)} directories due to slowdowns")
             print(f"📊 Skipped {total_blocked_files} files in blocked directories")
+            
+            print(f"\n📊 DIRECTORY FOUL DETAILS:")
+            for dir_info in self.stats['performance_limited_directories']:
+                rel_path = os.path.relpath(dir_info['directory'])
+                print(f"  🚫 {rel_path}")
+                print(f"     ⚠️  {dir_info['threshold_exceeded']} | Avg time: {dir_info['avg_parse_time']:.1f}ms")
+                print(f"     📂 {dir_info['files_processed_before_block']} processed, {dir_info['files_blocked']} skipped")
         
         # Final summary
         if self.stats.get('abort_reason'):
