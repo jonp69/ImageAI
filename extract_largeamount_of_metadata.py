@@ -740,6 +740,102 @@ class UnparsedMetadataScanner:
         
         return output_file
 
+    def generate_performance_report(self):
+        """Generate performance troubleshooting report"""
+        if not self.stats['parsing_times']:
+            return
+        
+        print(f"\n⚡ PERFORMANCE ANALYSIS:")
+        
+        # Calculate statistics
+        all_times = [t['parse_time_ms'] for t in self.stats['parsing_times']]
+        all_times.sort()
+        
+        avg_time = sum(all_times) / len(all_times)
+        median_time = all_times[len(all_times) // 2]
+        min_time = min(all_times)
+        max_time = max(all_times)
+        
+        print(f"📊 Parsing Time Statistics:")
+        print(f"  Average: {avg_time:.2f}ms")
+        print(f"  Median:  {median_time:.2f}ms")
+        print(f"  Fastest: {min_time:.2f}ms")
+        print(f"  Slowest: {max_time:.2f}ms")
+        
+        # Format breakdown by format
+        format_times = defaultdict(list)
+        for timing in self.stats['parsing_times']:
+            format_times[timing['format']].append(timing['parse_time_ms'])
+        
+        print(f"\n📁 Average Time by Format:")
+        for format_name, times in format_times.items():
+            avg_format_time = sum(times) / len(times)
+            print(f"  {format_name}: {avg_format_time:.2f}ms ({len(times)} files)")
+        
+        # Show slowest files
+        slowest_files = sorted(self.stats['parsing_times'], 
+                             key=lambda x: x['parse_time_ms'], reverse=True)[:10]
+        
+        print(f"\n🐌 TOP 10 SLOWEST FILES (Troubleshooting):")
+        print("=" * 80)
+        
+        for i, file_info in enumerate(slowest_files, 1):
+            filename = os.path.basename(file_info['filename'])
+            parse_time = file_info['parse_time_ms']
+            file_size_kb = file_info['file_size'] / 1024
+            format_name = file_info['format']
+            chunks_found = file_info['chunks_found']
+            has_error = file_info['has_error']
+            
+            print(f"\n{i}. {filename}")
+            print(f"   ⏱️  Total time: {parse_time:.2f}ms")
+            print(f"   📏 File size: {file_size_kb:.1f}KB")
+            print(f"   📄 Format: {format_name}")
+            print(f"   🔍 Chunks found: {chunks_found}")
+            print(f"   ❌ Has error: {has_error}")
+            
+            # Show performance breakdown if available
+            if 'performance_breakdown' in file_info:
+                breakdown = file_info['performance_breakdown']
+                print(f"   📊 Time breakdown:")
+                print(f"      File access: {breakdown.get('file_access', 0):.2f}ms")
+                print(f"      Image open:  {breakdown.get('image_open', 0):.2f}ms")
+                print(f"      PNG chunks:  {breakdown.get('png_chunks', 0):.2f}ms")
+                print(f"      EXIF data:   {breakdown.get('exif_data', 0):.2f}ms")
+                print(f"      Analysis:    {breakdown.get('metadata_analysis', 0):.2f}ms")
+            
+            print(f"   📈 Efficiency: {parse_time/file_size_kb:.2f}ms/KB")
+            
+            # Identify potential issues
+            issues = []
+            if parse_time > avg_time * 3:
+                issues.append("Extremely slow (3x+ average)")
+            if file_size_kb > 5000:
+                issues.append("Very large file")
+            if breakdown.get('image_open', 0) > 50:
+                issues.append("Slow image opening (corrupt/large file?)")
+            if breakdown.get('png_chunks', 0) > 50:
+                issues.append("Slow PNG chunk processing")
+            
+            if issues:
+                print(f"   ⚠️  Potential issues: {', '.join(issues)}")
+        
+        # Analyze slow file patterns
+        print(f"\n🔍 SLOW FILE PATTERNS:")
+        slow_files = [f for f in self.stats['parsing_times'] if f['parse_time_ms'] > avg_time * 2]
+        
+        if slow_files:
+            slow_formats = defaultdict(int)
+            for f in slow_files[-20:]:  # Last 20 slow files
+                slow_formats[f['format']] += 1
+            
+            print(f"📄 Formats in slowest 20:")
+            for format_name, count in slow_formats.items():
+                print(f"   {format_name}: {count} files")
+            
+            avg_slow_size = sum(f['file_size'] for f in slow_files[-20:]) / len(slow_files[-20:]) / 1024
+            print(f"📏 Average size of slowest 20: {avg_slow_size:.1f}KB")
+    
 def main():
     parser = argparse.ArgumentParser(description="Scan large image datasets for unparsed metadata")
     parser.add_argument("directory", help="Directory to scan")
@@ -767,7 +863,7 @@ def main():
         extensions=args.extensions,
         max_files=args.max_files,
         min_size_kb=args.min_size,
-        slowdown_threshold=args.slowdown_threshold  # Fix: pass the correct parameter
+        slowdown_threshold=args.slowdown_threshold
     )
     
     scanner.generate_report(unparsed_files, args.output, args.min_size)
