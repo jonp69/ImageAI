@@ -1,0 +1,114 @@
+📋 Functional Requirements
+1. Metadata Extraction & Storage
+
+    Extract metadata (e.g., prompt, seed, steps, sampler, resolution, LoRA) from image files
+
+    Support formats: A1111, ComfyUI, PNG chunks
+
+    Track file path, version, and movement status
+
+    Store metadata in centralized image_metadata.json
+
+    Support formats: .png, .jpg, .jpeg, .webp
+
+2. Tag Prediction Engine
+
+    Predict image tags using a model (e.g., WD14 or HuggingFace API)
+
+    Store predicted tags with confidence scores
+
+    Confidence-based filtering of tags
+
+    Modular backend: local or remote (offline support planned)
+
+3. Tag Comparison & Accuracy Analysis
+
+    Compare predicted tags to generation prompt
+
+    Highlight missing, extra, or common tags
+
+    Compare with human-assigned tags (via UI)
+
+    Compute accuracy, precision, recall of model vs. human tags
+
+4. Tag Normalization
+
+    Map synonyms (e.g., redhead → red_hair)
+
+    Normalize tags to consistent lowercase/underscored format
+
+    Remove duplicates and merge scores for equivalent tags
+
+5. Semantic Search
+
+    Embed tags using SentenceTransformer
+
+    Search similar tags by meaning
+
+    Return top N most similar tags via CLI
+
+6. Visual Dashboard UI
+
+    Image gallery with thumbnails and metadata
+
+    Search/filter images by tags or tag score
+
+    Display tag frequency histograms
+
+    Color-coded confidence scores for tags
+
+    Tag source switch (e.g., predicted vs. prompt)
+
+    Tag filtering by confidence threshold
+
+    (Planned) Tag grouping and multi-image comparison
+
+    (Planned) Navigation to related images (by tag similarity)
+
+7. Visual Tag Graph
+
+    Generate co-occurrence matrix of tags
+
+    Visualize as heatmap with seaborn or matplotlib
+
+    Export heatmap image
+
+8. Comic Panel Splitter
+
+    Automatically detect and split panels from comic/manga pages
+
+    Export individual panels
+
+    Output with and without overlaid speech bubbles
+
+9. Speech Bubble Detection & Textless Export
+
+    Detect speech bubbles (via contour or OCR)
+
+    Draw bounding boxes (for inspection)
+
+    Mask bubbles to export clean, textless versions of panels
+
+10. Tag Categorization
+
+    Group tags by semantic type (e.g., clothing, body, emotion)
+
+    Intended for filtering and analysis in UI (pending integration)
+
+11. Human Annotation Interface
+
+    Streamlit UI to manually inspect/edit tags
+
+    Add/remove tags per image
+
+    Save annotations in human_annotations.json
+
+12. CLI for All Modules
+
+    Normalize tags
+
+    Search for semantically similar tags
+
+    Generate visual tag heatmaps
+
+    Easily script any functionality from the command line

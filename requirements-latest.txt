@@ -1,0 +1,13 @@
+# Always get latest versions
+streamlit
+opencv-python
+Pillow
+pandas
+numpy
+matplotlib
+seaborn
+torch
+transformers
+sentence-transformers
+scikit-learn
+pytesseract

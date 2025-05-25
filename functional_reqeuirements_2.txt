@@ -1,0 +1,71 @@
+🖼️ Core Functionality
+
+    Image Discovery
+
+        Scan the current directory (recursively) for image files with supported extensions (.png, .jpg, .jpeg, .webp).
+
+        Maintain a metadata record for each discovered image.
+
+    Metadata Management
+
+        Load and save image metadata to a JSON file (image_metadata.json).
+
+        Store relevant metadata including filename, folder, tags (predicted, source, human), resolution, encoder, etc.
+
+        Add default fields to new entries upon scanning.
+
+    Tag Prediction (Stub)
+
+        Provide a placeholder function (tag_images_stub) that assigns fake predicted tags to images.
+
+    Streamlit Dashboard
+
+        Display a visual interface showing:
+
+            Image thumbnail
+
+            Filename and folder
+
+            Predicted tags
+
+        Allow filtering by tag via sidebar input.
+
+    Tag Comparison
+
+        Compare tags across three sources:
+
+            Generated (source_tags.positive)
+
+            Predicted (predicted_tags)
+
+            Human (human_tags)
+
+        Display a detailed breakdown including:
+
+            Tags only in generated or predicted
+
+            Common tags
+
+            Discrepancies between human and predicted tags
+
+    Interactive UI Component
+
+        Show the tag comparison per image in an expandable section using st.expander.
+
+    Streamlit Sidebar Options
+
+        "🔄 Scan Images" button: rescans images and updates metadata.
+
+        "🏷️ Run Tagger (stub)" button: populates predicted tags using the stub.
+
+🧩 Supporting Components
+
+    Tag Comparator Module
+
+        compare_tags() function:
+
+            Accepts three tag sources (generated, predicted, human).
+
+            Returns structured comparison data including false positives/negatives and intersections.
+
+            Applies a confidence threshold to predicted tags.

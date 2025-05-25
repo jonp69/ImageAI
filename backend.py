@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Image Metadata and Tagging System - Backend Functions
+Image Metadata and Tagging System - Backend Functions (Restored)
 
-This module contains all the core functionality for image metadata extraction,
-tagging, speech bubble detection, and file tracking.
+This module contains all the core functionality including restored functions
+from the old code that were missing in the consolidation.
 """
 
 # Imports
@@ -19,29 +19,47 @@ import os
 import pandas as pd
 import pytesseract
 import torch
+import time
+import shutil
+from datetime import datetime
 from PIL import Image, ImageDraw
 from PIL.ExifTags import TAGS
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import confusion_matrix
 from transformers import AutoProcessor, AutoModelForImageClassification
 from typing import Dict, List, Set, Optional, Tuple
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 # Global Variables
 # ------------------------------
 SUPPORTED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 DATA_FILE = "image_metadata.json"
-TOOL_VERSION = "v0.1.0"
-TAG_SYNONYM_MAP = {}
+TOOL_VERSION = "v0.2.0"
+
+# Enhanced tag synonym mapping
+TAG_SYNONYM_MAP = {
+    "redhead": "red_hair",
+    "blonde": "blonde_hair", 
+    "brunette": "brown_hair",
+    "happy": "smile",
+    "grin": "smile",
+    "smiling": "smile",
+    "school girl": "school_uniform",
+    "uniform": "school_uniform"
+}
 
 # Default tag categories
 DEFAULT_TAG_CATEGORIES = {
-    "hair_color": ["blonde_hair", "brown_hair", "black_hair", "red_hair", "white_hair"],
-    "expression": ["smile", "serious", "angry", "sad", "surprised"],
-    "clothing": ["school_uniform", "dress", "shirt", "jacket"],
-    "body_parts": ["long_hair", "short_hair", "blue_eyes", "brown_eyes"],
-    "background": ["indoors", "outdoors", "simple_background"],
+    "hair_color": ["blonde_hair", "brown_hair", "black_hair", "red_hair", "white_hair", "silver_hair"],
+    "expression": ["smile", "serious", "angry", "sad", "surprised", "crying", "laughing"],
+    "clothing": ["school_uniform", "dress", "shirt", "jacket", "swimsuit", "bikini"],
+    "body_parts": ["long_hair", "short_hair", "blue_eyes", "brown_eyes", "green_eyes"],
+    "background": ["indoors", "outdoors", "simple_background", "detailed_background"],
+    "pose": ["standing", "sitting", "lying", "walking", "running"],
     "uncategorized": []
 }
 
@@ -82,16 +100,20 @@ class FileTracker:
                         
                         if full_path in self.metadata:
                             self.metadata[full_path]["exists"] = True
+                            self.metadata[full_path]["last_seen"] = datetime.now().isoformat()
                         else:
                             self.metadata[full_path] = {
                                 "exists": True,
                                 "last_modified": os.path.getmtime(full_path),
-                                "size": os.path.getsize(full_path)
+                                "size": os.path.getsize(full_path),
+                                "last_seen": datetime.now().isoformat(),
+                                "hash": None
                             }
         
         for path in list(self.metadata.keys()):
             if path not in existing_files:
                 self.metadata[path]["exists"] = False
+                self.metadata[path]["deleted_date"] = datetime.now().isoformat()
         
         self.save_metadata()
         
@@ -120,6 +142,16 @@ class FileTracker:
                     by_size.setdefault(size, []).append(path)
             duplicates = {f"size_{size}": paths for size, paths in by_size.items() if len(paths) > 1}
             
+        elif check_method == "hash":
+            by_hash = {}
+            for path, info in self.metadata.items():
+                if info.get("exists", True):
+                    if not info.get("hash"):
+                        info["hash"] = hash_file(path)
+                    file_hash = info["hash"]
+                    by_hash.setdefault(file_hash, []).append(path)
+            duplicates = {hash_val: paths for hash_val, paths in by_hash.items() if len(paths) > 1}
+            
         elif check_method == "metadata":
             by_meta = {}
             for path, info in self.metadata.items():
@@ -134,14 +166,27 @@ class FileTracker:
         
         return duplicates
 
+class DirectoryWatcher(FileSystemEventHandler):
+    """Monitor directory for new images and auto-process them."""
+    
+    def __init__(self, callback_func, extensions=SUPPORTED_EXTENSIONS):
+        self.callback_func = callback_func
+        self.extensions = extensions
+        
+    def on_created(self, event):
+        if not event.is_directory:
+            if any(event.src_path.lower().endswith(ext) for ext in self.extensions):
+                print(f"New image detected: {event.src_path}")
+                self.callback_func(event.src_path)
+
 # Utility Functions
 # ------------------------------
 def hash_file(filepath: str) -> str:
     """Generate SHA256 hash of a file."""
     hasher = hashlib.sha256()
     with open(filepath, "rb") as f:
-        buf = f.read()
-        hasher.update(buf)
+        for chunk in iter(lambda: f.read(4096), b""):
+            hasher.update(chunk)
     return hasher.hexdigest()
 
 def find_images(base_dir: str, extensions: List[str] = None) -> List[str]:
@@ -165,6 +210,449 @@ def save_metadata(data, metadata_path="image_metadata.json"):
     with open(metadata_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
+def backup_metadata(metadata_path="image_metadata.json", backup_dir="backups"):
+    """Create timestamped backup of metadata file."""
+    if not os.path.exists(metadata_path):
+        return None
+        
+    os.makedirs(backup_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = os.path.join(backup_dir, f"metadata_backup_{timestamp}.json")
+    shutil.copy2(metadata_path, backup_path)
+    print(f"Metadata backed up to: {backup_path}")
+    return backup_path
+
+# RESTORED: Tag Normalization Functions
+# ------------------------------
+def normalize_tag_format(tag: str) -> str:
+    """Convert tag to standard format (lowercase, underscores)."""
+    return tag.lower().replace(" ", "_").replace("-", "_")
+
+def apply_synonym_mapping(tags: List[str], synonym_map: Dict[str, str] = None) -> List[str]:
+    """Replace synonymous tags with standard versions."""
+    if synonym_map is None:
+        synonym_map = TAG_SYNONYM_MAP
+    
+    normalized = []
+    for tag in tags:
+        normalized_tag = normalize_tag_format(tag)
+        # Apply synonym mapping
+        mapped_tag = synonym_map.get(normalized_tag, normalized_tag)
+        normalized.append(mapped_tag)
+    
+    return list(set(normalized))  # Remove duplicates
+
+def merge_duplicate_tags(tag_dict: Dict[str, float]) -> Dict[str, float]:
+    """Merge tags that are duplicates after normalization."""
+    merged = {}
+    for tag, confidence in tag_dict.items():
+        normalized = normalize_tag_format(tag)
+        mapped = TAG_SYNONYM_MAP.get(normalized, normalized)
+        
+        if mapped in merged:
+            # Keep highest confidence
+            merged[mapped] = max(merged[mapped], confidence)
+        else:
+            merged[mapped] = confidence
+    
+    return merged
+
+def validate_tag_consistency(metadata: Dict[str, dict]) -> Dict[str, List[str]]:
+    """Check for tag conflicts and inconsistencies."""
+    issues = defaultdict(list)
+    
+    for image_path, meta in metadata.items():
+        predicted_tags = meta.get("predicted_tags", {})
+        source_tags = meta.get("source_tags", {})
+        
+        # Check for conflicting tags
+        conflicting_pairs = [
+            ("male", "female"),
+            ("1girl", "1boy"),
+            ("blonde_hair", "brown_hair"),
+            ("short_hair", "long_hair")
+        ]
+        
+        all_tags = set(predicted_tags.keys()) | set(source_tags.keys())
+        for tag1, tag2 in conflicting_pairs:
+            if tag1 in all_tags and tag2 in all_tags:
+                issues[image_path].append(f"Conflicting tags: {tag1} vs {tag2}")
+    
+    return dict(issues)
+
+# RESTORED: Accuracy Evaluation Functions
+# ------------------------------
+def load_human_annotations(file_path: str) -> Dict[str, List[str]]:
+    """Load human-annotated tags from CSV or JSON file."""
+    annotations = {}
+    
+    if file_path.endswith('.json'):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            for image_path, tags in data.items():
+                annotations[image_path] = tags if isinstance(tags, list) else [tags]
+    
+    elif file_path.endswith('.csv'):
+        df = pd.read_csv(file_path)
+        for _, row in df.iterrows():
+            image_path = row['image_path']
+            tags = row['tags'].split(',') if isinstance(row['tags'], str) else []
+            annotations[image_path] = [tag.strip() for tag in tags]
+    
+    return annotations
+
+def batch_evaluate_accuracy(image_list: List[str], metadata: Dict[str, dict], 
+                          human_annotations: Dict[str, List[str]], 
+                          conf_threshold: float = 0.3) -> Dict[str, dict]:
+    """Evaluate accuracy for multiple images at once."""
+    results = {}
+    
+    for image_path in image_list:
+        if image_path in metadata and image_path in human_annotations:
+            predicted = metadata[image_path].get("predicted_tags", {})
+            human = human_annotations[image_path]
+            
+            results[image_path] = compare_tag_sets(predicted, human, conf_threshold)
+    
+    return results
+
+def generate_accuracy_report(results: Dict[str, dict], output_path: str = "accuracy_report.html"):
+    """Generate detailed accuracy report in HTML format."""
+    if not results:
+        return
+    
+    # Calculate overall statistics
+    all_precision = [r["precision"] for r in results.values()]
+    all_recall = [r["recall"] for r in results.values()]
+    all_f1 = [r["f1_score"] for r in results.values()]
+    
+    avg_precision = np.mean(all_precision)
+    avg_recall = np.mean(all_recall)
+    avg_f1 = np.mean(all_f1)
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Tag Accuracy Report</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            .summary {{ background-color: #f0f0f0; padding: 15px; border-radius: 5px; }}
+            .image-result {{ margin: 20px 0; border: 1px solid #ccc; padding: 10px; }}
+            .tag-list {{ display: inline-block; margin: 5px; padding: 3px 8px; border-radius: 3px; }}
+            .correct {{ background-color: #d4edda; color: #155724; }}
+            .false-positive {{ background-color: #f8d7da; color: #721c24; }}
+            .false-negative {{ background-color: #fff3cd; color: #856404; }}
+        </style>
+    </head>
+    <body>
+        <h1>Tag Accuracy Report</h1>
+        <div class="summary">
+            <h2>Overall Statistics</h2>
+            <p><strong>Average Precision:</strong> {avg_precision:.3f}</p>
+            <p><strong>Average Recall:</strong> {avg_recall:.3f}</p>
+            <p><strong>Average F1 Score:</strong> {avg_f1:.3f}</p>
+            <p><strong>Images Evaluated:</strong> {len(results)}</p>
+        </div>
+    """
+    
+    for image_path, result in results.items():
+        image_name = os.path.basename(image_path)
+        html_content += f"""
+        <div class="image-result">
+            <h3>{image_name}</h3>
+            <p><strong>Precision:</strong> {result['precision']:.3f} | 
+               <strong>Recall:</strong> {result['recall']:.3f} | 
+               <strong>F1:</strong> {result['f1_score']:.3f}</p>
+            
+            <div>
+                <strong>Correct Tags:</strong><br>
+                {' '.join([f'<span class="tag-list correct">{tag}</span>' for tag in result['true_positives']])}
+            </div>
+            
+            <div>
+                <strong>False Positives:</strong><br>
+                {' '.join([f'<span class="tag-list false-positive">{tag}</span>' for tag in result['false_positives']])}
+            </div>
+            
+            <div>
+                <strong>Missed Tags:</strong><br>
+                {' '.join([f'<span class="tag-list false-negative">{tag}</span>' for tag in result['false_negatives']])}
+            </div>
+        </div>
+        """
+    
+    html_content += """
+    </body>
+    </html>
+    """
+    
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    print(f"Accuracy report saved to: {output_path}")
+
+def plot_confusion_matrix(results: Dict[str, dict], save_path: str = "confusion_matrix.png"):
+    """Create visualization for tag accuracy metrics."""
+    if not results:
+        return
+    
+    precision_scores = [r["precision"] for r in results.values()]
+    recall_scores = [r["recall"] for r in results.values()]
+    f1_scores = [r["f1_score"] for r in results.values()]
+    
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    
+    # Precision distribution
+    axes[0, 0].hist(precision_scores, bins=20, alpha=0.7, color='blue')
+    axes[0, 0].set_title('Precision Distribution')
+    axes[0, 0].set_xlabel('Precision')
+    axes[0, 0].set_ylabel('Frequency')
+    
+    # Recall distribution
+    axes[0, 1].hist(recall_scores, bins=20, alpha=0.7, color='green')
+    axes[0, 1].set_title('Recall Distribution')
+    axes[0, 1].set_xlabel('Recall')
+    axes[0, 1].set_ylabel('Frequency')
+    
+    # F1 distribution
+    axes[1, 0].hist(f1_scores, bins=20, alpha=0.7, color='red')
+    axes[1, 0].set_title('F1 Score Distribution')
+    axes[1, 0].set_xlabel('F1 Score')
+    axes[1, 0].set_ylabel('Frequency')
+    
+    # Precision vs Recall scatter
+    axes[1, 1].scatter(precision_scores, recall_scores, alpha=0.6)
+    axes[1, 1].set_title('Precision vs Recall')
+    axes[1, 1].set_xlabel('Precision')
+    axes[1, 1].set_ylabel('Recall')
+    
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"Confusion matrix plot saved to: {save_path}")
+
+# RESTORED: Export/Import Functions
+# ------------------------------
+def export_tag_list(metadata: Dict[str, dict], format_type: str = "csv", 
+                   output_path: str = None, tag_source: str = "predicted_tags") -> str:
+    """Export tags in various formats for external use."""
+    if not output_path:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = f"tag_export_{timestamp}.{format_type}"
+    
+    # Collect all tags
+    all_tags = set()
+    image_tags = {}
+    
+    for image_path, meta in metadata.items():
+        tags = meta.get(tag_source, {})
+        if isinstance(tags, dict):
+            # For predicted tags with confidence
+            tag_list = list(tags.keys())
+        else:
+            # For simple tag lists
+            tag_list = tags if isinstance(tags, list) else []
+        
+        image_tags[image_path] = tag_list
+        all_tags.update(tag_list)
+    
+    if format_type == "csv":
+        df_data = []
+        for image_path, tags in image_tags.items():
+            df_data.append({
+                "image_path": image_path,
+                "image_name": os.path.basename(image_path),
+                "tags": ",".join(tags),
+                "tag_count": len(tags)
+            })
+        
+        df = pd.DataFrame(df_data)
+        df.to_csv(output_path, index=False)
+    
+    elif format_type == "json":
+        export_data = {
+            "export_date": datetime.now().isoformat(),
+            "tag_source": tag_source,
+            "total_images": len(image_tags),
+            "unique_tags": len(all_tags),
+            "data": image_tags
+        }
+        
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(export_data, f, indent=2, ensure_ascii=False)
+    
+    elif format_type == "txt":
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write("# Tag Export\n")
+            f.write(f"# Generated: {datetime.now().isoformat()}\n")
+            f.write(f"# Total unique tags: {len(all_tags)}\n\n")
+            
+            for tag in sorted(all_tags):
+                f.write(f"{tag}\n")
+    
+    print(f"Tags exported to: {output_path}")
+    return output_path
+
+def import_tag_annotations(file_path: str, target_field: str = "human_tags") -> Dict[str, List[str]]:
+    """Import human annotations from external files."""
+    annotations = {}
+    
+    if file_path.endswith('.csv'):
+        df = pd.read_csv(file_path)
+        for _, row in df.iterrows():
+            image_path = row.get('image_path', '')
+            tags_str = row.get('tags', '')
+            
+            if image_path and tags_str:
+                tags = [tag.strip() for tag in tags_str.split(',')]
+                annotations[image_path] = tags
+    
+    elif file_path.endswith('.json'):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            
+            if isinstance(data, dict) and 'data' in data:
+                annotations = data['data']
+            else:
+                annotations = data
+    
+    print(f"Imported {len(annotations)} annotations from {file_path}")
+    return annotations
+
+def generate_report_html(metadata: Dict[str, dict], output_path: str = "collection_report.html"):
+    """Generate comprehensive HTML report of the collection."""
+    # Analyze the collection
+    total_images = len(metadata)
+    existing_images = sum(1 for meta in metadata.values() if meta.get("exists", True))
+    
+    # Tag statistics
+    all_predicted_tags = defaultdict(int)
+    all_source_tags = defaultdict(int)
+    
+    for meta in metadata.values():
+        pred_tags = meta.get("predicted_tags", {})
+        source_tags = meta.get("source_tags", {})
+        
+        for tag in pred_tags:
+            all_predicted_tags[tag] += 1
+        
+        for tag in source_tags:
+            all_source_tags[tag] += 1
+    
+    # Most common tags
+    top_predicted = sorted(all_predicted_tags.items(), key=lambda x: x[1], reverse=True)[:20]
+    top_source = sorted(all_source_tags.items(), key=lambda x: x[1], reverse=True)[:20]
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Image Collection Report</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            .section {{ margin: 30px 0; }}
+            .stats {{ background-color: #f8f9fa; padding: 15px; border-radius: 5px; }}
+            .tag-table {{ border-collapse: collapse; width: 100%; }}
+            .tag-table th, .tag-table td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+            .tag-table th {{ background-color: #f2f2f2; }}
+        </style>
+    </head>
+    <body>
+        <h1>Image Collection Report</h1>
+        <p>Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+        
+        <div class="section">
+            <h2>Collection Overview</h2>
+            <div class="stats">
+                <p><strong>Total Images:</strong> {total_images}</p>
+                <p><strong>Existing Images:</strong> {existing_images}</p>
+                <p><strong>Missing Images:</strong> {total_images - existing_images}</p>
+                <p><strong>Unique Predicted Tags:</strong> {len(all_predicted_tags)}</p>
+                <p><strong>Unique Source Tags:</strong> {len(all_source_tags)}</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Most Common Predicted Tags</h2>
+            <table class="tag-table">
+                <tr><th>Tag</th><th>Frequency</th></tr>
+                {''.join([f'<tr><td>{tag}</td><td>{count}</td></tr>' for tag, count in top_predicted])}
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>Most Common Source Tags</h2>
+            <table class="tag-table">
+                <tr><th>Tag</th><th>Frequency</th></tr>
+                {''.join([f'<tr><td>{tag}</td><td>{count}</td></tr>' for tag, count in top_source])}
+            </table>
+        </div>
+    </body>
+    </html>
+    """
+    
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    print(f"Collection report saved to: {output_path}")
+
+# RESTORED: Directory Watching
+# ------------------------------
+def watch_directory(path: str, callback_func, extensions: Set[str] = SUPPORTED_EXTENSIONS):
+    """Monitor directory for new images and auto-process them."""
+    event_handler = DirectoryWatcher(callback_func, extensions)
+    observer = Observer()
+    observer.schedule(event_handler, path, recursive=True)
+    observer.start()
+    
+    print(f"Watching directory: {path}")
+    print("Press Ctrl+C to stop watching...")
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+        print("Stopped watching directory.")
+    
+    observer.join()
+
+def process_batch_queue(operations: List[Dict], metadata_path: str = "image_metadata.json"):
+    """Process a queue of batch operations."""
+    metadata = load_metadata(metadata_path)
+    
+    for operation in operations:
+        op_type = operation.get("type")
+        target = operation.get("target")
+        params = operation.get("params", {})
+        
+        if op_type == "normalize_tags":
+            if target in metadata:
+                predicted_tags = metadata[target].get("predicted_tags", {})
+                normalized = merge_duplicate_tags(predicted_tags)
+                metadata[target]["predicted_tags"] = normalized
+                print(f"Normalized tags for: {target}")
+        
+        elif op_type == "extract_metadata":
+            if os.path.exists(target):
+                metadata[target] = extract_image_metadata(target)
+                print(f"Extracted metadata for: {target}")
+        
+        elif op_type == "detect_speech_bubbles":
+            if os.path.exists(target):
+                bubbles = detect_speech_bubbles(target)
+                metadata[target]["speech_bubbles"] = bubbles
+                print(f"Detected {len(bubbles)} speech bubbles in: {target}")
+    
+    save_metadata(metadata, metadata_path)
+    print(f"Processed {len(operations)} batch operations")
+
+# Keep existing functions from the original backend...
+# (Include all the existing functions from the previous backend.py)
+
+# All the original functions remain the same:
 def extract_image_metadata(image_path: str) -> Dict:
     """Extract comprehensive metadata from an image file."""
     metadata = {
@@ -389,11 +877,18 @@ def group_by_tag(data, key="predicted_tags", min_conf=0.3):
 # CLI Functions
 # ------------------------------
 def main():
-    """Main CLI entry point."""
-    parser = argparse.ArgumentParser(description="Image Metadata and Tagging Tool")
+    """Main CLI entry point with restored functionality."""
+    parser = argparse.ArgumentParser(description="Image Metadata and Tagging Tool (Restored)")
     parser.add_argument("--scan", action="store_true", help="Scan directory for images")
     parser.add_argument("--detect-bubbles", help="Detect speech bubbles in image")
     parser.add_argument("--categorize", action="store_true", help="Categorize tags")
+    parser.add_argument("--normalize-tags", action="store_true", help="Normalize tag formats")
+    parser.add_argument("--validate-tags", action="store_true", help="Validate tag consistency")
+    parser.add_argument("--export-tags", help="Export tags (csv/json/txt)")
+    parser.add_argument("--import-annotations", help="Import human annotations")
+    parser.add_argument("--accuracy-report", action="store_true", help="Generate accuracy report")
+    parser.add_argument("--backup", action="store_true", help="Backup metadata")
+    parser.add_argument("--watch", help="Watch directory for new images")
     parser.add_argument("--base-dir", default=".", help="Base directory to scan")
     
     args = parser.parse_args()
@@ -410,6 +905,66 @@ def main():
     if args.categorize:
         stats = update_metadata_with_categories()
         print(f"Categorization complete: {stats}")
+    
+    if args.normalize_tags:
+        metadata = load_metadata()
+        for path, meta in metadata.items():
+            if "predicted_tags" in meta:
+                normalized = merge_duplicate_tags(meta["predicted_tags"])
+                meta["predicted_tags"] = normalized
+        save_metadata(metadata)
+        print("Tag normalization complete")
+    
+    if args.validate_tags:
+        metadata = load_metadata()
+        issues = validate_tag_consistency(metadata)
+        if issues:
+            print(f"Found tag consistency issues in {len(issues)} images")
+            for path, problems in issues.items():
+                print(f"  {path}: {problems}")
+        else:
+            print("No tag consistency issues found")
+    
+    if args.export_tags:
+        metadata = load_metadata()
+        format_type = args.export_tags
+        export_tag_list(metadata, format_type)
+    
+    if args.import_annotations:
+        annotations = import_tag_annotations(args.import_annotations)
+        metadata = load_metadata()
+        for path, tags in annotations.items():
+            if path in metadata:
+                metadata[path]["human_tags"] = tags
+        save_metadata(metadata)
+        print("Annotations imported successfully")
+    
+    if args.accuracy_report:
+        metadata = load_metadata()
+        # Find images with both predicted and human tags
+        evaluation_images = [path for path, meta in metadata.items() 
+                           if "predicted_tags" in meta and "human_tags" in meta]
+        
+        if evaluation_images:
+            human_annotations = {path: metadata[path]["human_tags"] for path in evaluation_images}
+            results = batch_evaluate_accuracy(evaluation_images, metadata, human_annotations)
+            generate_accuracy_report(results)
+            plot_confusion_matrix(results)
+        else:
+            print("No images found with both predicted and human tags")
+    
+    if args.backup:
+        backup_path = backup_metadata()
+        print(f"Metadata backed up to: {backup_path}")
+    
+    if args.watch:
+        def on_new_image(image_path):
+            metadata = load_metadata()
+            metadata[image_path] = extract_image_metadata(image_path)
+            save_metadata(metadata)
+            print(f"Processed new image: {image_path}")
+        
+        watch_directory(args.watch, on_new_image)
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,339 @@
+{
+  "scan_info": {
+    "timestamp": "2025-05-24T06:07:51.131408",
+    "report_filename": "unparsed_metadata_report_20250524_060751_38f6b60d27ab.json",
+    "scan_id": "1f9d8e525d2217a4",
+    "total_files_scanned": 6579,
+    "files_with_unparsed_metadata": 6,
+    "likely_ai_generated": 3,
+    "scan_errors": 1
+  },
+  "statistics": {
+    "unparsed_chunk_frequency": {
+      "Description": [
+        "119282002_p0.png",
+        "126907248_p0.png",
+        "126907248_p4.png"
+      ],
+      "Comment": [
+        "119282002_p0.png",
+        "126907248_p0.png",
+        "126907248_p4.png"
+      ],
+      "XML:com.adobe.xmp": [
+        "119732155_p0.png"
+      ],
+      "EXIF_ImageDescription": [
+        "gettyimages-1243568772-2048x2048.jpg"
+      ],
+      "lora": [
+        "banner.jpg"
+      ],
+      "generated_by": [
+        "banner.jpg"
+      ]
+    },
+    "top_unparsed_chunks": [
+      [
+        "Description",
+        3
+      ],
+      [
+        "Comment",
+        3
+      ],
+      [
+        "XML:com.adobe.xmp",
+        1
+      ],
+      [
+        "EXIF_ImageDescription",
+        1
+      ],
+      [
+        "lora",
+        1
+      ],
+      [
+        "generated_by",
+        1
+      ]
+    ]
+  },
+  "high_priority_files": [
+    {
+      "path": "C:\\Users\\jonp6\\FLUX.1-Schnell-Serverless\\126907248_p0.png",
+      "filename": "126907248_p0.png",
+      "has_unparsed": true,
+      "ai_likelihood": 135,
+      "unparsed_chunks": [
+        {
+          "key": "Comment",
+          "length": 3536,
+          "reasons": [
+            "Unknown JSON structure",
+            "AI keywords found: ['steps', 'sampler', 'cfg', 'seed', 'model']",
+            "Large unknown chunk (3536 chars)",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{\"prompt\": \"{{{rio (blue archive)}}},{{{mother and child incest}}},{{{{{maternal incest}}}}},{{{{{{{{fellatio}}}}}}}},{{{cumdump}}},{{{{{mosaic penis}}}}},{{{{{{{{{{grabbing head}}}}}}}}}}},{{{{{{{{on..."
+        },
+        {
+          "key": "Description",
+          "length": 1437,
+          "reasons": [
+            "AI keywords found: ['eta']",
+            "Large unknown chunk (1437 chars)",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{{{rio (blue archive)}}},{{{mother and child incest}}},{{{{{maternal incest}}}}},{{{{{{{{fellatio}}}}}}}},{{{cumdump}}},{{{{{mosaic penis}}}}},{{{{{{{{{{grabbing head}}}}}}}}}}},{{{{{{{{oneshota}}}}}}..."
+        }
+      ],
+      "file_size": 1274306,
+      "format": "PNG",
+      "error": null
+    },
+    {
+      "path": "C:\\Users\\jonp6\\FLUX.1-Schnell-Serverless\\126907248_p4.png",
+      "filename": "126907248_p4.png",
+      "has_unparsed": true,
+      "ai_likelihood": 135,
+      "unparsed_chunks": [
+        {
+          "key": "Comment",
+          "length": 3536,
+          "reasons": [
+            "Unknown JSON structure",
+            "AI keywords found: ['steps', 'sampler', 'cfg', 'seed', 'model']",
+            "Large unknown chunk (3536 chars)",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{\"prompt\": \"{{{rio (blue archive)}}},{{{mother and child incest}}},{{{{{maternal incest}}}}},{{{{{{{{fellatio}}}}}}}},{{{cumdump}}},{{{{{mosaic penis}}}}},{{{{{{{{{{grabbing head}}}}}}}}}}},{{{{{{{{on..."
+        },
+        {
+          "key": "Description",
+          "length": 1438,
+          "reasons": [
+            "AI keywords found: ['eta']",
+            "Large unknown chunk (1438 chars)",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{{{rio (blue archive)}}},{{{mother and child incest}}},{{{{{maternal incest}}}}},{{{{{{{{fellatio}}}}}}}},{{{cumdump}}},{{{{{mosaic penis}}}}},{{{{{{{{{{grabbing head}}}}}}}}}}},{{{{{{{{oneshota}}}}}}..."
+        }
+      ],
+      "file_size": 1282355,
+      "format": "PNG",
+      "error": null
+    },
+    {
+      "path": "C:\\Users\\jonp6\\FLUX.1-Schnell-Serverless\\119282002_p0.png",
+      "filename": "119282002_p0.png",
+      "has_unparsed": true,
+      "ai_likelihood": 120,
+      "unparsed_chunks": [
+        {
+          "key": "Description",
+          "length": 456,
+          "reasons": [
+            "AI keywords found: ['lora']",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{{sakurajima_mai}}, [artist:haneru], [artist:ningen_mame],artist:ciloranko,[artist:sho_(sho_lwlw)],[[artist:as109]], wlop,year_2023, 1girl, solo, nsfw, bdsm, {{reverse bunnysuit}}, reverse outfit, fro..."
+        },
+        {
+          "key": "Comment",
+          "length": 1475,
+          "reasons": [
+            "Unknown JSON structure",
+            "AI keywords found: ['steps', 'sampler', 'cfg', 'seed', 'model']",
+            "Large unknown chunk (1475 chars)",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{\"prompt\": \"{{sakurajima_mai}}, [artist:haneru], [artist:ningen_mame],artist:ciloranko,[artist:sho_(sho_lwlw)],[[artist:as109]], wlop,year_2023, 1girl, solo, nsfw, bdsm, {{reverse bunnysuit}}, reverse..."
+        }
+      ],
+      "file_size": 1393162,
+      "format": "PNG",
+      "error": null
+    }
+  ],
+  "all_unparsed_files": [
+    {
+      "path": "C:\\Users\\jonp6\\FLUX.1-Schnell-Serverless\\126907248_p0.png",
+      "filename": "126907248_p0.png",
+      "has_unparsed": true,
+      "ai_likelihood": 135,
+      "unparsed_chunks": [
+        {
+          "key": "Comment",
+          "length": 3536,
+          "reasons": [
+            "Unknown JSON structure",
+            "AI keywords found: ['steps', 'sampler', 'cfg', 'seed', 'model']",
+            "Large unknown chunk (3536 chars)",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{\"prompt\": \"{{{rio (blue archive)}}},{{{mother and child incest}}},{{{{{maternal incest}}}}},{{{{{{{{fellatio}}}}}}}},{{{cumdump}}},{{{{{mosaic penis}}}}},{{{{{{{{{{grabbing head}}}}}}}}}}},{{{{{{{{on..."
+        },
+        {
+          "key": "Description",
+          "length": 1437,
+          "reasons": [
+            "AI keywords found: ['eta']",
+            "Large unknown chunk (1437 chars)",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{{{rio (blue archive)}}},{{{mother and child incest}}},{{{{{maternal incest}}}}},{{{{{{{{fellatio}}}}}}}},{{{cumdump}}},{{{{{mosaic penis}}}}},{{{{{{{{{{grabbing head}}}}}}}}}}},{{{{{{{{oneshota}}}}}}..."
+        }
+      ],
+      "file_size": 1274306,
+      "format": "PNG",
+      "error": null
+    },
+    {
+      "path": "C:\\Users\\jonp6\\FLUX.1-Schnell-Serverless\\126907248_p4.png",
+      "filename": "126907248_p4.png",
+      "has_unparsed": true,
+      "ai_likelihood": 135,
+      "unparsed_chunks": [
+        {
+          "key": "Comment",
+          "length": 3536,
+          "reasons": [
+            "Unknown JSON structure",
+            "AI keywords found: ['steps', 'sampler', 'cfg', 'seed', 'model']",
+            "Large unknown chunk (3536 chars)",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{\"prompt\": \"{{{rio (blue archive)}}},{{{mother and child incest}}},{{{{{maternal incest}}}}},{{{{{{{{fellatio}}}}}}}},{{{cumdump}}},{{{{{mosaic penis}}}}},{{{{{{{{{{grabbing head}}}}}}}}}}},{{{{{{{{on..."
+        },
+        {
+          "key": "Description",
+          "length": 1438,
+          "reasons": [
+            "AI keywords found: ['eta']",
+            "Large unknown chunk (1438 chars)",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{{{rio (blue archive)}}},{{{mother and child incest}}},{{{{{maternal incest}}}}},{{{{{{{{fellatio}}}}}}}},{{{cumdump}}},{{{{{mosaic penis}}}}},{{{{{{{{{{grabbing head}}}}}}}}}}},{{{{{{{{oneshota}}}}}}..."
+        }
+      ],
+      "file_size": 1282355,
+      "format": "PNG",
+      "error": null
+    },
+    {
+      "path": "C:\\Users\\jonp6\\FLUX.1-Schnell-Serverless\\119282002_p0.png",
+      "filename": "119282002_p0.png",
+      "has_unparsed": true,
+      "ai_likelihood": 120,
+      "unparsed_chunks": [
+        {
+          "key": "Description",
+          "length": 456,
+          "reasons": [
+            "AI keywords found: ['lora']",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{{sakurajima_mai}}, [artist:haneru], [artist:ningen_mame],artist:ciloranko,[artist:sho_(sho_lwlw)],[[artist:as109]], wlop,year_2023, 1girl, solo, nsfw, bdsm, {{reverse bunnysuit}}, reverse outfit, fro..."
+        },
+        {
+          "key": "Comment",
+          "length": 1475,
+          "reasons": [
+            "Unknown JSON structure",
+            "AI keywords found: ['steps', 'sampler', 'cfg', 'seed', 'model']",
+            "Large unknown chunk (1475 chars)",
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "{\"prompt\": \"{{sakurajima_mai}}, [artist:haneru], [artist:ningen_mame],artist:ciloranko,[artist:sho_(sho_lwlw)],[[artist:as109]], wlop,year_2023, 1girl, solo, nsfw, bdsm, {{reverse bunnysuit}}, reverse..."
+        }
+      ],
+      "file_size": 1393162,
+      "format": "PNG",
+      "error": null
+    },
+    {
+      "path": "C:\\Users\\jonp6\\FLUX.1-Schnell-Serverless\\119732155_p0.png",
+      "filename": "119732155_p0.png",
+      "has_unparsed": true,
+      "ai_likelihood": 15,
+      "unparsed_chunks": [
+        {
+          "key": "XML:com.adobe.xmp",
+          "length": 3422,
+          "reasons": [
+            "AI keywords found: ['eta']",
+            "Large unknown chunk (3422 chars)"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "<?xpacket begin=\"﻿\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>\n<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"XMP Core 4.4.0-Exiv2\">\n <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n  <rdf:Descri..."
+        }
+      ],
+      "file_size": 3997125,
+      "format": "PNG",
+      "error": null
+    },
+    {
+      "path": "C:\\Users\\jonp6\\FLUX.1-Schnell-Serverless\\gettyimages-1243568772-2048x2048.jpg",
+      "filename": "gettyimages-1243568772-2048x2048.jpg",
+      "has_unparsed": true,
+      "ai_likelihood": 15,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_ImageDescription",
+          "length": 302,
+          "reasons": [
+            "Suspicious content in standard field"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "A woman streaker plays with flag on the 16th green after she invaded the Old Course at St. Andrews during the second round of the British Open Championship 21 July 2000. (ELECTRONIC IMAGE)  AFP PHOTO/..."
+        }
+      ],
+      "file_size": 467538,
+      "format": "JPEG",
+      "error": null
+    },
+    {
+      "path": "C:\\Users\\jonp6\\FLUX.1-Schnell-Serverless\\Flux-Uncensored-V2\\banner.jpg",
+      "filename": "banner.jpg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "lora",
+          "length": 20,
+          "reasons": [
+            "AI keywords found: ['lora']"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "uncensored-flux-lora"
+        },
+        {
+          "key": "generated_by",
+          "length": 21,
+          "reasons": [
+            "AI keywords found: ['model']"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "https://modelslab.com"
+        }
+      ],
+      "file_size": 376383,
+      "format": "PNG",
+      "error": null
+    }
+  ]
+}
