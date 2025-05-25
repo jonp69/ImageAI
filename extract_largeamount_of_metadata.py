@@ -97,109 +97,109 @@ class UnparsedMetadataScanner:
             return False  # Skip files we can't access
     
     def is_unparsed_metadata(self, chunk_key: str, chunk_content: str) -> dict:
-        """Determine if metadata chunk is unparsed/unknown"""
+        """Determine if metadata chunk is known/parseable or needs investigation"""
         result = {
-            'is_unparsed': False,
-            'reasons': [],
-            'ai_likelihood': 0,
-            'chunk_type': 'unknown'
+            'is_known_parseable': False,
+            'is_unknown_format': False,
+            'platform': 'unknown',
+            'needs_investigation': False,
+            'content_sample': '',
+            'structure_info': {}
         }
         
         key_lower = chunk_key.lower()
-        content_lower = chunk_content.lower()
         
-        # Check if it's a known parseable format
-        known_parseable = False
+        # Check if it's a KNOWN parseable format
         for platform, patterns in self.known_ai_patterns.items():
             if any(pattern in key_lower for pattern in patterns):
-                result['chunk_type'] = platform
-                known_parseable = True
-                break
+                result['is_known_parseable'] = True
+                result['platform'] = platform
+                # Just log it exists, don't parse content
+                return result
         
-        # If it's JSON but not from known platforms
-        try:
-            json_data = json.loads(chunk_content)
-            if not known_parseable and isinstance(json_data, dict):
-                result['is_unparsed'] = True
-                result['reasons'].append('Unknown JSON structure')
-                result['ai_likelihood'] += 30
-        except json.JSONDecodeError:
-            pass
+        # If not known, check if it needs investigation
+        content_preview = chunk_content[:500]  # Small sample only
         
-        # Check for AI-related keywords in unknown chunks
-        if not known_parseable:
-            ai_keywords_found = []
-            for keyword in self.suspicious_patterns:
-                if keyword in content_lower:
-                    ai_keywords_found.append(keyword)
-                    result['ai_likelihood'] += 5
-            
-            if ai_keywords_found:
-                result['is_unparsed'] = True
-                result['reasons'].append(f'AI keywords found: {ai_keywords_found[:5]}')
+        # Check for JSON structure (potential AI metadata)
+        if chunk_content.strip().startswith('{'):
+            try:
+                json.loads(content_preview)
+                result['is_unknown_format'] = True
+                result['needs_investigation'] = True
+                result['structure_info'] = {
+                    'type': 'json',
+                    'size_bytes': len(chunk_content),
+                    'preview_keys': []
+                }
+                
+                # Extract just the top-level keys for investigation
+                try:
+                    sample_json = json.loads(chunk_content)
+                    if isinstance(sample_json, dict):
+                        result['structure_info']['preview_keys'] = list(sample_json.keys())[:10]
+                except:
+                    pass
+                
+            except json.JSONDecodeError:
+                pass
         
-        # Check for large text chunks (might contain hidden data)
-        if len(chunk_content) > 1000 and not known_parseable:
-            result['is_unparsed'] = True
-            result['reasons'].append(f'Large unknown chunk ({len(chunk_content)} chars)')
-            result['ai_likelihood'] += 10
+        # Check for structured text (like A1111 parameters)
+        elif any(keyword in content_preview.lower() for keyword in ['steps:', 'sampler:', 'cfg:', 'seed:']):
+            result['is_unknown_format'] = True
+            result['needs_investigation'] = True
+            result['structure_info'] = {
+                'type': 'structured_text',
+                'size_bytes': len(chunk_content),
+                'detected_keywords': [kw for kw in ['steps', 'sampler', 'cfg', 'seed', 'model'] 
+                                    if kw in content_preview.lower()]
+            }
         
-        # Check for unusual chunk names
-        unusual_names = [
-            'usercomment', 'comment', 'description', 'software',
-            'imagedescription', 'artist', 'copyright', 'title'
-        ]
-        if key_lower in unusual_names and len(chunk_content) > 100:
-            result['is_unparsed'] = True
-            result['reasons'].append('Suspicious content in standard field')
-            result['ai_likelihood'] += 15
+        # Large text chunks in unusual fields
+        elif len(chunk_content) > 1000:
+            result['is_unknown_format'] = True
+            result['needs_investigation'] = True
+            result['structure_info'] = {
+                'type': 'large_text',
+                'size_bytes': len(chunk_content),
+                'field_name': chunk_key
+            }
+        
+        # Store small content sample for investigation (not full content)
+        if result['needs_investigation']:
+            result['content_sample'] = content_preview
         
         return result
     
     def scan_image_fast(self, image_path: str) -> dict:
-        """Fast scan of single image for unparsed metadata with timing"""
-        start_time = time.perf_counter()  # High precision timing
+        """Ultra-fast scan - discovery only, no parsing"""
+        start_time = time.perf_counter()
         
         result = {
             'path': str(image_path),
             'filename': os.path.basename(image_path),
-            'has_unparsed': False,
-            'ai_likelihood': 0,
-            'unparsed_chunks': [],
+            'known_formats': [],      # Platforms we can already parse
+            'unknown_formats': [],    # New formats that need parser development
             'file_size': 0,
             'format': 'unknown',
             'error': None,
-            'parse_time_ms': 0,  # New: parsing time
-            'performance_info': {}  # New: detailed performance breakdown
-        }
-        
-        timing_breakdown = {
-            'file_access': 0,
-            'image_open': 0,
-            'png_chunks': 0,
-            'exif_data': 0,
-            'metadata_analysis': 0
+            'parse_time_ms': 0
         }
         
         try:
-            # Time file access
-            access_start = time.perf_counter()
             result['file_size'] = os.path.getsize(image_path)
-            timing_breakdown['file_access'] = (time.perf_counter() - access_start) * 1000
             
-            # Time image opening
-            open_start = time.perf_counter()
             with Image.open(image_path) as img:
-                timing_breakdown['image_open'] = (time.perf_counter() - open_start) * 1000
                 result['format'] = img.format
                 
-                # Time PNG text chunk processing
-                png_start = time.perf_counter()
+                # Fast PNG text chunk discovery
                 if hasattr(img, 'text') and img.text:
                     for key, value in img.text.items():
-                        analysis_start = time.perf_counter()
                         analysis = self.is_unparsed_metadata(key, value)
-                        analysis_time = (time.perf_counter() - analysis_start) * 1000
+                        
+                        if analysis['is_known_parseable']:
+                            # Just log that this platform exists here
+                            platform_info = {
+                                'platform': analysis['platform'],
                         
                         timing_breakdown['metadata_analysis'] += analysis_time
                         
