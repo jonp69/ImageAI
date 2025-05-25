@@ -267,8 +267,8 @@ class UnparsedMetadataScanner:
         return result
     
     def scan_directory(self, directory: str, recursive: bool = True, 
-                      extensions: list = None, max_files: int = None,
-                      min_size_kb: int = 50) -> list:
+        extensions: list = None, max_files: int = None,
+        min_size_kb: int = 50) -> list:
         """Scan directory for images with unparsed metadata"""
         
         if extensions is None:
@@ -278,6 +278,15 @@ class UnparsedMetadataScanner:
         print(f"📁 Recursive: {recursive}")
         print(f"📄 Extensions: {extensions}")
         print(f"📏 Min file size: {min_size_kb}KB ({min_size_kb * 1024:,} bytes)")
+        print(f"🚀 Will ramp up to 300+/sec before monitoring for slowdowns below 200/sec")
+        
+        # Performance monitoring variables
+        performance_window = 100  # Check every 100 files
+        min_acceptable_rate = 200.0  # files per second
+        ramp_up_target_rate = 300.0  # Target rate to reach before monitoring
+        ramp_up_completed = False
+        slow_detections = 0
+        max_slow_detections = 3  # Abort after 3 consecutive slow periods
         
         # Collect all image files
         image_files = []
@@ -296,7 +305,7 @@ class UnparsedMetadataScanner:
                                 break
                         else:
                             skipped_small += 1
-                            
+                        
                 if max_files and len(image_files) >= max_files:
                     break
         else:
@@ -321,19 +330,11 @@ class UnparsedMetadataScanner:
         # Scan files
         unparsed_files = []
         start_time = time.time()
+        window_start_time = start_time
+        last_100_start = start_time
         
         for i, image_path in enumerate(image_files):
-            if i % 100 == 0:
-                elapsed = time.time() - start_time
-                rate = i / elapsed if elapsed > 0 else 0
-                eta = (len(image_files) - i) / rate if rate > 0 else 0
-                
-                # Show average parsing time
-                if self.stats['parsing_times']:
-                    avg_parse_time = sum(t['parse_time_ms'] for t in self.stats['parsing_times']) / len(self.stats['parsing_times'])
-                    print(f"⏳ Progress: {i}/{len(image_files)} ({rate:.1f} files/sec, avg: {avg_parse_time:.1f}ms/file, ETA: {eta:.0f}s)")
-                else:
-                    print(f"⏳ Progress: {i}/{len(image_files)} ({rate:.1f} files/sec, ETA: {eta:.0f}s)")
+            current_time = time.time()
             
             result = self.scan_image_fast(image_path)
             self.stats['scanned_files'] += 1
@@ -352,9 +353,111 @@ class UnparsedMetadataScanner:
             
             if result.get('unparsed_chunks') or result.get('error'):
                 self.stats['files_with_metadata'] += 1
+            
+            # Performance check every 100 files
+            if (i + 1) % performance_window == 0:
+                window_elapsed = current_time - last_100_start
+                window_rate = performance_window / window_elapsed if window_elapsed > 0 else 0
+                
+                # Calculate overall rate
+                overall_elapsed = current_time - start_time
+                overall_rate = (i + 1) / overall_elapsed if overall_elapsed > 0 else 0
+                eta = (len(image_files) - i - 1) / overall_rate if overall_rate > 0 else 0
+                
+                # Show average parsing time
+                avg_parse_time = 0
+                if self.stats['parsing_times']:
+                    recent_times = self.stats['parsing_times'][-performance_window:]
+                    avg_parse_time = sum(t['parse_time_ms'] for t in recent_times) / len(recent_times)
+                
+                # Check if we've reached ramp-up target
+                if not ramp_up_completed:
+                    if window_rate >= ramp_up_target_rate:
+                        ramp_up_completed = True
+                        print(f"🚀 RAMP-UP COMPLETE! Reached {window_rate:.1f}/s (target: {ramp_up_target_rate}/s)")
+                        print(f"   📊 Now monitoring for slowdowns below {min_acceptable_rate}/s")
+                        print(f"   ✅ Files: {i+1}/{len(image_files)} | Overall: {overall_rate:.1f}/s | Avg parse: {avg_parse_time:.1f}ms")
+                    else:
+                        # Still ramping up - show encouraging progress
+                        ramp_emoji = "🔥" if window_rate > 250 else "🚀" if window_rate > 150 else "⏳"
+                        progress_pct = (window_rate / ramp_up_target_rate) * 100
+                        print(f"{ramp_emoji} RAMP-UP: {i+1}/{len(image_files)} | "
+                              f"Rate: {window_rate:.1f}/s ({progress_pct:.0f}% of target) | "
+                              f"Overall: {overall_rate:.1f}/s | Parse: {avg_parse_time:.1f}ms | ETA: {eta:.0f}s")
+                else:
+                    # Ramp-up completed - now monitor for slowdowns
+                    if window_rate < min_acceptable_rate:
+                        slow_detections += 1
+                        print(f"🐌 SLOW WINDOW {slow_detections}/{max_slow_detections}: {i+1}/{len(image_files)} | "
+                              f"Rate: {window_rate:.1f}/s (target: {min_acceptable_rate}/s) | "
+                              f"Avg parse: {avg_parse_time:.1f}ms | ETA: {eta:.0f}s")
+                        
+                        # Show immediate diagnostics
+                        if slow_detections == 1:
+                            print(f"   📊 Diagnostics:")
+                            print(f"   - Recent avg parse time: {avg_parse_time:.1f}ms")
+                            if self.stats['parsing_times']:
+                                recent_max = max(t['parse_time_ms'] for t in self.stats['parsing_times'][-performance_window:])
+                                recent_slow_files = [t['filename'] for t in self.stats['parsing_times'][-performance_window:] 
+                                                   if t['parse_time_ms'] > avg_parse_time * 2]
+                                print(f"   - Slowest recent file: {recent_max:.1f}ms")
+                                if recent_slow_files:
+                                    print(f"   - Files taking 2x+ avg time: {len(recent_slow_files)}")
+                        
+                        # Abort after consecutive slow periods
+                        if slow_detections >= max_slow_detections:
+                            print(f"\n🚨 ABORTING: {slow_detections} consecutive slow periods detected!")
+                            print(f"📊 Processed {i+1} files in {overall_elapsed:.1f}s before aborting")
+                            print(f"🐌 Current rate: {window_rate:.1f} files/second (target: {min_acceptable_rate})")
+                            print(f"✅ Ramp-up was completed successfully before slowdown")
+                            
+                            # Store abort reason in stats
+                            self.stats['abort_reason'] = f"Processing rate dropped to {window_rate:.1f} files/sec after ramp-up"
+                            self.stats['aborted_at_file'] = i + 1
+                            self.stats['abort_time'] = overall_elapsed
+                            self.stats['ramp_up_completed'] = True
+                            
+                            break
+                    else:
+                        # Reset slow detection counter if we're back to normal speed
+                        if slow_detections > 0:
+                            print(f"✅ Speed recovered: {window_rate:.1f}/s (was slow for {slow_detections} windows)")
+                        slow_detections = 0
+                        status_emoji = "🔥" if window_rate > 300 else "⚡"
+                        print(f"{status_emoji} Progress: {i+1}/{len(image_files)} | "
+                              f"Rate: {window_rate:.1f}/s | Overall: {overall_rate:.1f}/s | "
+                              f"Parse: {avg_parse_time:.1f}ms | ETA: {eta:.0f}s")
+                
+                # Reset window timer - THIS MUST BE AFTER ALL THE CHECKS
+                last_100_start = current_time
+        
+        # Quick progress updates during ramp-up for slower iterations
+        if not ramp_up_completed and i % 50 == 0:
+            elapsed = time.time() - start_time
+            rate = (i + 1) / elapsed if elapsed > 0 else 0
+            progress_to_target = (rate / ramp_up_target_rate) * 100
+            print(f"⏳ Warming up: {rate:.1f}/s ({progress_to_target:.0f}% of {ramp_up_target_rate}/s target) - file {i+1}")
         
         elapsed = time.time() - start_time
-        print(f"✅ Scan complete! Processed {len(image_files)} files in {elapsed:.1f}s")
+        
+        # Final summary
+        if self.stats.get('abort_reason'):
+            print(f"🚨 SCAN ABORTED: {self.stats['abort_reason']}")
+            print(f"📊 Processed {self.stats['scanned_files']} files before abort")
+            if ramp_up_completed:
+                print(f"✅ Performance monitoring was active (ramp-up completed)")
+            else:
+                print(f"⚠️  Aborted during ramp-up phase (never reached {ramp_up_target_rate}/s)")
+        else:
+            print(f"✅ Scan complete! Processed {len(image_files)} files in {elapsed:.1f}s")
+            final_rate = len(image_files) / elapsed if elapsed > 0 else 0
+            print(f"📊 Final processing rate: {final_rate:.1f} files/second")
+            if not ramp_up_completed:
+                print(f"ℹ️  Note: Never reached ramp-up target of {ramp_up_target_rate}/s")
+        
+        # Store ramp-up info in stats
+        self.stats['ramp_up_completed'] = ramp_up_completed
+        self.stats['ramp_up_target'] = ramp_up_target_rate
         
         return unparsed_files
     
@@ -495,6 +598,9 @@ class UnparsedMetadataScanner:
                 "total_files_found": self.stats['total_files'],
                 "skipped_small_files": self.stats['skipped_small_files'],
                 "files_scanned": self.stats['scanned_files'],
+                "scan_completed": not bool(self.stats.get('abort_reason')),  # New field
+                "abort_reason": self.stats.get('abort_reason'),  # New field
+                "aborted_at_file": self.stats.get('aborted_at_file'),  # New field
                 "files_with_unparsed_metadata": len(unparsed_files),
                 "likely_ai_generated": self.stats['ai_generated'],
                 "scan_errors": self.stats['errors']
@@ -527,11 +633,15 @@ class UnparsedMetadataScanner:
             print(f"💾 Emergency backup saved to: {emergency_file}")
             output_file = emergency_file
         
-        # Print summary
-        print(f"\n📊 UNPARSED METADATA SCAN RESULTS:")
+        # Print summary with abort info
+        print(f"\n📊 SCAN RESULTS:")
+        if self.stats.get('abort_reason'):
+            print(f"🚨 ABORTED: {self.stats['abort_reason']}")
+            print(f"📍 Stopped at file: {self.stats['aborted_at_file']}/{self.stats['total_files']}")
+            print(f"⏱️  Time before abort: {self.stats.get('abort_time', 0):.1f}s")
+        
         print(f"📁 Total files found: {self.stats['total_files']:,}")
-        print(f"📏 Skipped (under {min_size_kb}KB): {self.stats['skipped_small_files']:,}")
-        print(f"🔍 Files scanned: {self.stats['scanned_files']:,}")
+        print(f"🔍 Files actually scanned: {self.stats['scanned_files']:,}")
         print(f"📝 Files with unparsed metadata: {len(unparsed_files):,}")
         print(f"🤖 Likely AI-generated: {self.stats['ai_generated']:,}")
         print(f"❌ Scan errors: {self.stats['errors']:,}")

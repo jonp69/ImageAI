@@ -1,0 +1,950 @@
+{
+  "scan_info": {
+    "timestamp": "2025-05-25T03:11:10.835224",
+    "report_filename": "unparsed_metadata_report_20250525_031110_b8b0d97ee8ce.json",
+    "scan_id": "e815c6620819df1b",
+    "min_file_size_kb": 50,
+    "min_file_size_bytes": 51200,
+    "total_files_found": 54930,
+    "skipped_small_files": 13358,
+    "files_scanned": 300,
+    "scan_completed": false,
+    "abort_reason": "Processing rate dropped to 75.9 files/sec",
+    "aborted_at_file": 300,
+    "files_with_unparsed_metadata": 25,
+    "likely_ai_generated": 0,
+    "scan_errors": 0
+  },
+  "performance_stats": {
+    "average_parse_time_ms": 11.75242333340672,
+    "median_parse_time_ms": 0.7232999996631406,
+    "slowest_parse_time_ms": 318.2861999994202,
+    "fastest_parse_time_ms": 0.23039999905449804,
+    "total_parsing_time_ms": 3525.727000022016,
+    "slowest_files": [
+      {
+        "filename": "00075-1579728818-bokeh, anime style digital painting, 1girl, woman, punk bad girl, cute, [_colorful costume design,_0.2], bombshell punk hair, br-1.webp",
+        "parse_time_ms": 318.2861999994202,
+        "file_size": 2183398,
+        "format": "WEBP",
+        "chunks_found": 0,
+        "has_error": false,
+        "performance_breakdown": {
+          "file_access": 0.20109999968553893,
+          "image_open": 317.85390000004554,
+          "png_chunks": 0.0010999992809956893,
+          "exif_data": 0.1269999993382953,
+          "metadata_analysis": 0
+        }
+      },
+      {
+        "filename": "09794e1d78cf2fad5a60115af0ccad9ca77fb24691d89699f838970f9dd30382.png",
+        "parse_time_ms": 178.19409999901836,
+        "file_size": 11371784,
+        "format": "PNG",
+        "chunks_found": 0,
+        "has_error": false,
+        "performance_breakdown": {
+          "file_access": 0.32439999995403923,
+          "image_open": 0.7827999997971347,
+          "png_chunks": 176.9432000000961,
+          "exif_data": 0.07659999937459361,
+          "metadata_analysis": 0
+        }
+      },
+      {
+        "filename": "reference sheet2.png",
+        "parse_time_ms": 169.46120000102383,
+        "file_size": 3001381,
+        "format": "PNG",
+        "chunks_found": 0,
+        "has_error": false,
+        "performance_breakdown": {
+          "file_access": 0.10289999954693485,
+          "image_open": 0.5541999998968095,
+          "png_chunks": 168.71790000004694,
+          "exif_data": 0.03099999958067201,
+          "metadata_analysis": 0
+        }
+      },
+      {
+        "filename": "SPOILER_8264488086543538291_002.png",
+        "parse_time_ms": 112.86370000016177,
+        "file_size": 2730103,
+        "format": "PNG",
+        "chunks_found": 1,
+        "has_error": false,
+        "performance_breakdown": {
+          "file_access": 0.14399999963643495,
+          "image_open": 6.033699999534292,
+          "png_chunks": 106.40969999985828,
+          "exif_data": 0.24479999956383836,
+          "metadata_analysis": 0.10880000081670005
+        }
+      },
+      {
+        "filename": "SPOILER_8264488086543538291.png",
+        "parse_time_ms": 111.89329999979236,
+        "file_size": 4173774,
+        "format": "PNG",
+        "chunks_found": 1,
+        "has_error": false,
+        "performance_breakdown": {
+          "file_access": 0.051799999710056,
+          "image_open": 0.17889999980980065,
+          "png_chunks": 111.59950000001118,
+          "exif_data": 0.04079999962414149,
+          "metadata_analysis": 0.05680000140273478
+        }
+      },
+      {
+        "filename": "123570689_p0.png",
+        "parse_time_ms": 103.67720000067493,
+        "file_size": 3153557,
+        "format": "PNG",
+        "chunks_found": 0,
+        "has_error": false,
+        "performance_breakdown": {
+          "file_access": 0.17299999854003545,
+          "image_open": 0.6696999989799224,
+          "png_chunks": 102.78420000031474,
+          "exif_data": 0.012900000001536682,
+          "metadata_analysis": 0
+        }
+      },
+      {
+        "filename": "nsfw art dildo tape.png",
+        "parse_time_ms": 91.53759999935573,
+        "file_size": 6663853,
+        "format": "PNG",
+        "chunks_found": 0,
+        "has_error": false,
+        "performance_breakdown": {
+          "file_access": 0.10280000060447492,
+          "image_open": 1.067900000634836,
+          "png_chunks": 90.32649999971909,
+          "exif_data": 0.012900000001536682,
+          "metadata_analysis": 0.04410000110510737
+        }
+      },
+      {
+        "filename": "3(1).png",
+        "parse_time_ms": 82.62310000100115,
+        "file_size": 3620863,
+        "format": "PNG",
+        "chunks_found": 0,
+        "has_error": false,
+        "performance_breakdown": {
+          "file_access": 0.06070000017643906,
+          "image_open": 0.19729999985429458,
+          "png_chunks": 82.32090000092285,
+          "exif_data": 0.015300000086426735,
+          "metadata_analysis": 0
+        }
+      },
+      {
+        "filename": "dtweyJDCwe0g-nvTWBmJO.png",
+        "parse_time_ms": 78.39140000032785,
+        "file_size": 2462526,
+        "format": "PNG",
+        "chunks_found": 0,
+        "has_error": false,
+        "performance_breakdown": {
+          "file_access": 0.0901000003068475,
+          "image_open": 0.4394000006868737,
+          "png_chunks": 77.81960000102117,
+          "exif_data": 0.015199999324977398,
+          "metadata_analysis": 0.1094999988708878
+        }
+      },
+      {
+        "filename": "NTnfkDU-G4i5U8iN8u73X.png",
+        "parse_time_ms": 59.811000000991044,
+        "file_size": 2482275,
+        "format": "PNG",
+        "chunks_found": 0,
+        "has_error": false,
+        "performance_breakdown": {
+          "file_access": 0.16080000023066532,
+          "image_open": 0.7022999998298474,
+          "png_chunks": 58.90030000045954,
+          "exif_data": 0.013199998647905886,
+          "metadata_analysis": 0.10040000051958486
+        }
+      }
+    ]
+  },
+  "statistics": {
+    "unparsed_chunk_frequency": {
+      "XML:com.adobe.xmp": [
+        "João Daniel da Costa Pereira - ENG - ionic.png",
+        "Sem título.png",
+        "SPOILER_8264488086543538291.png",
+        "SPOILER_8264488086543538291_002.png",
+        "chelsea.png",
+        "ihc.png"
+      ],
+      "EXIF_Tag_59932": [
+        "Sem títcvhdklulo.jpeg",
+        "Sem títighlçulo.jpeg",
+        "Sem títjftgflulo.jpeg",
+        "Sem títjtdsulo.jpeg",
+        "Sem títucvjllo.jpeg",
+        "Sem títugilo.jpeg",
+        "Sem títulcgho.jpeg",
+        "Sem títuldfyo.jpeg",
+        "Sem títulfio.jpeg",
+        "Sem títulfuhlgo.jpeg",
+        "Sem títulfuhlo.jpeg",
+        "Sem títulfulcko.jpeg",
+        "Sem títulfykuo.jpeg",
+        "Sem títulgjiççlo.jpeg",
+        "Sem títuloful.jpeg",
+        "Sem títulvuhlço.jpeg",
+        "Sem títuvhllo.jpeg",
+        "Sem títvulo.jpeg",
+        "cheetah2.jpg"
+      ]
+    },
+    "top_unparsed_chunks": [
+      [
+        "EXIF_Tag_59932",
+        19
+      ],
+      [
+        "XML:com.adobe.xmp",
+        6
+      ]
+    ]
+  },
+  "high_priority_files": [],
+  "all_unparsed_files": [
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Fooocus_win64_2-5-0\\Fooocus_win64_2-5-0\\python_embeded\\Lib\\site-packages\\skimage\\data\\chelsea.png",
+      "filename": "chelsea.png",
+      "has_unparsed": true,
+      "ai_likelihood": 20,
+      "unparsed_chunks": [
+        {
+          "key": "XML:com.adobe.xmp",
+          "length": 3100,
+          "reasons": [
+            "AI keywords found: ['model', 'eta']",
+            "Large unknown chunk (3100 chars)"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"XMP Core 5.1.2\">\n   <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n      <rdf:Description rdf:about=\"\"\n            xmlns:exif=\"http://ns...",
+          "analysis_time_ms": 0.11000000085914508
+        }
+      ],
+      "file_size": 240512,
+      "format": "PNG",
+      "error": null,
+      "parse_time_ms": 9.240500001396867,
+      "performance_info": {
+        "file_access": 0.14709999959450215,
+        "image_open": 1.0204999998677522,
+        "png_chunks": 7.986999999047839,
+        "exif_data": 0.04470000021683518,
+        "metadata_analysis": 0.11000000085914508
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\SPOILER_8264488086543538291_002.png",
+      "filename": "SPOILER_8264488086543538291_002.png",
+      "has_unparsed": true,
+      "ai_likelihood": 15,
+      "unparsed_chunks": [
+        {
+          "key": "XML:com.adobe.xmp",
+          "length": 3768,
+          "reasons": [
+            "AI keywords found: ['eta']",
+            "Large unknown chunk (3768 chars)"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "<?xpacket begin=\"﻿\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>\n<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"XMP Core 4.4.0-Exiv2\">\n <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n  <rdf:Descri...",
+          "analysis_time_ms": 0.06740000026184134
+        }
+      ],
+      "file_size": 2730103,
+      "format": "PNG",
+      "error": null,
+      "parse_time_ms": 112.86370000016177,
+      "performance_info": {
+        "file_access": 0.14399999963643495,
+        "image_open": 6.033699999534292,
+        "png_chunks": 106.40969999985828,
+        "exif_data": 0.24479999956383836,
+        "metadata_analysis": 0.10880000081670005
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Fooocus_win64_2-5-0\\Fooocus_win64_2-5-0\\python_embeded\\Lib\\site-packages\\skimage\\data\\ihc.png",
+      "filename": "ihc.png",
+      "has_unparsed": true,
+      "ai_likelihood": 15,
+      "unparsed_chunks": [
+        {
+          "key": "XML:com.adobe.xmp",
+          "length": 982,
+          "reasons": [
+            "AI keywords found: ['eta', 'width', 'height']"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"XMP Core 5.1.2\">\n   <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n      <rdf:Description rdf:about=\"\"\n            xmlns:tiff=\"http://ns...",
+          "analysis_time_ms": 0.07259999983943999
+        }
+      ],
+      "file_size": 477916,
+      "format": "PNG",
+      "error": null,
+      "parse_time_ms": 11.995400000159862,
+      "performance_info": {
+        "file_access": 0.15129999883356504,
+        "image_open": 0.9968000013031997,
+        "png_chunks": 10.772600000564125,
+        "exif_data": 0.039000000469968654,
+        "metadata_analysis": 0.07259999983943999
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títcvhdklulo.jpeg",
+      "filename": "Sem títcvhdklulo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.043399999412940815
+        }
+      ],
+      "file_size": 796338,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.546000001122593,
+      "performance_info": {
+        "file_access": 0.05450000026030466,
+        "image_open": 0.30700000024808105,
+        "png_chunks": 0.003099999958067201,
+        "exif_data": 0.1277999999729218,
+        "metadata_analysis": 0.043399999412940815
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títighlçulo.jpeg",
+      "filename": "Sem títighlçulo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.04430000080901664
+        }
+      ],
+      "file_size": 557368,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.6682000002911082,
+      "performance_info": {
+        "file_access": 0.06370000119204633,
+        "image_open": 0.38859999949636403,
+        "png_chunks": 0.003600000127335079,
+        "exif_data": 0.15419999908772297,
+        "metadata_analysis": 0.04430000080901664
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títjftgflulo.jpeg",
+      "filename": "Sem títjftgflulo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.03509999987727497
+        }
+      ],
+      "file_size": 591061,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.5510999999387423,
+      "performance_info": {
+        "file_access": 0.051700000767596066,
+        "image_open": 0.3341999999975087,
+        "png_chunks": 0.003300001480965875,
+        "exif_data": 0.10990000009769574,
+        "metadata_analysis": 0.03509999987727497
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títjtdsulo.jpeg",
+      "filename": "Sem títjtdsulo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.028700000257231295
+        }
+      ],
+      "file_size": 612477,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.488499999846681,
+      "performance_info": {
+        "file_access": 0.051799999710056,
+        "image_open": 0.2934000003733672,
+        "png_chunks": 0.002999999196617864,
+        "exif_data": 0.08949999937613029,
+        "metadata_analysis": 0.028700000257231295
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títucvjllo.jpeg",
+      "filename": "Sem títucvjllo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.09990000035031699
+        }
+      ],
+      "file_size": 769901,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 1.5660999997635372,
+      "performance_info": {
+        "file_access": 0.10469999870110769,
+        "image_open": 0.888999999006046,
+        "png_chunks": 0.01230000088980887,
+        "exif_data": 0.31820000003790483,
+        "metadata_analysis": 0.09990000035031699
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títugilo.jpeg",
+      "filename": "Sem títugilo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.037200001315795816
+        }
+      ],
+      "file_size": 710156,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.7391999988612952,
+      "performance_info": {
+        "file_access": 0.09949999912350904,
+        "image_open": 0.42500000017753337,
+        "png_chunks": 0.006199999916134402,
+        "exif_data": 0.13969999963592272,
+        "metadata_analysis": 0.037200001315795816
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títulcgho.jpeg",
+      "filename": "Sem títulcgho.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.08290000005217735
+        }
+      ],
+      "file_size": 747470,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 1.0559000002103858,
+      "performance_info": {
+        "file_access": 0.09630000022298191,
+        "image_open": 0.5324000012478791,
+        "png_chunks": 0.009499999578110874,
+        "exif_data": 0.307400001474889,
+        "metadata_analysis": 0.08290000005217735
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títuldfyo.jpeg",
+      "filename": "Sem títuldfyo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.03719999949680641
+        }
+      ],
+      "file_size": 659128,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.5791999992652563,
+      "performance_info": {
+        "file_access": 0.057499999456922524,
+        "image_open": 0.3316000002087094,
+        "png_chunks": 0.003099999958067201,
+        "exif_data": 0.10299999848939478,
+        "metadata_analysis": 0.03719999949680641
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títulfio.jpeg",
+      "filename": "Sem títulfio.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.04389999958220869
+        }
+      ],
+      "file_size": 840470,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 1.0105000001203734,
+      "performance_info": {
+        "file_access": 0.16199999845412094,
+        "image_open": 0.6131000009190757,
+        "png_chunks": 0.004600000465870835,
+        "exif_data": 0.14709999959450215,
+        "metadata_analysis": 0.04389999958220869
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títulfuhlgo.jpeg",
+      "filename": "Sem títulfuhlgo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.04059999992023222
+        }
+      ],
+      "file_size": 826315,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.7232999996631406,
+      "performance_info": {
+        "file_access": 0.11189999895577785,
+        "image_open": 0.40520000038668513,
+        "png_chunks": 0.003399998604436405,
+        "exif_data": 0.11660000018309802,
+        "metadata_analysis": 0.04059999992023222
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títulfuhlo.jpeg",
+      "filename": "Sem títulfuhlo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.06609999945794698
+        }
+      ],
+      "file_size": 826091,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.8792000007815659,
+      "performance_info": {
+        "file_access": 0.06680000115011353,
+        "image_open": 0.5392000002757413,
+        "png_chunks": 0.0070000005507608876,
+        "exif_data": 0.20349999977042899,
+        "metadata_analysis": 0.06609999945794698
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títulfulcko.jpeg",
+      "filename": "Sem títulfulcko.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.039399999877787195
+        }
+      ],
+      "file_size": 628226,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 1.0208000003331108,
+      "performance_info": {
+        "file_access": 0.12649999916902743,
+        "image_open": 0.6511000010505086,
+        "png_chunks": 0.004100000296602957,
+        "exif_data": 0.18280000040249433,
+        "metadata_analysis": 0.039399999877787195
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títulfykuo.jpeg",
+      "filename": "Sem títulfykuo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.043399999412940815
+        }
+      ],
+      "file_size": 757057,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.8391000010306016,
+      "performance_info": {
+        "file_access": 0.11670000094454736,
+        "image_open": 0.5113999995955965,
+        "png_chunks": 0.0090000012278324,
+        "exif_data": 0.13840000065101776,
+        "metadata_analysis": 0.043399999412940815
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títulgjiççlo.jpeg",
+      "filename": "Sem títulgjiççlo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.12079999942216091
+        }
+      ],
+      "file_size": 687426,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 1.0999000005540438,
+      "performance_info": {
+        "file_access": 0.0976999999693362,
+        "image_open": 0.5034999994677491,
+        "png_chunks": 0.004900000931229442,
+        "exif_data": 0.34360000063315965,
+        "metadata_analysis": 0.12079999942216091
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títuloful.jpeg",
+      "filename": "Sem títuloful.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.036499999623629265
+        }
+      ],
+      "file_size": 837647,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.6725000002916204,
+      "performance_info": {
+        "file_access": 0.09930000123858918,
+        "image_open": 0.404500000513508,
+        "png_chunks": 0.004300000000512227,
+        "exif_data": 0.10579999980109278,
+        "metadata_analysis": 0.036499999623629265
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títulvuhlço.jpeg",
+      "filename": "Sem títulvuhlço.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.0351999988197349
+        }
+      ],
+      "file_size": 623830,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.6880000000819564,
+      "performance_info": {
+        "file_access": 0.08929999967222102,
+        "image_open": 0.3915999986929819,
+        "png_chunks": 0.004599998646881431,
+        "exif_data": 0.13860000035492703,
+        "metadata_analysis": 0.0351999988197349
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títuvhllo.jpeg",
+      "filename": "Sem títuvhllo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.03319999996165279
+        }
+      ],
+      "file_size": 773249,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.6016000006638933,
+      "performance_info": {
+        "file_access": 0.049500000386615284,
+        "image_open": 0.36219999856257346,
+        "png_chunks": 0.0029000002541579306,
+        "exif_data": 0.13500000022759195,
+        "metadata_analysis": 0.03319999996165279
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem títvulo.jpeg",
+      "filename": "Sem títvulo.jpeg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 1075,
+          "reasons": [
+            "Large unknown chunk (1075 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.02910000148403924
+        }
+      ],
+      "file_size": 680318,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 0.5751000007876428,
+      "performance_info": {
+        "file_access": 0.05419999979494605,
+        "image_open": 0.3085999996983446,
+        "png_chunks": 0.002999999196617864,
+        "exif_data": 0.15810000149940606,
+        "metadata_analysis": 0.02910000148403924
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Fooocus_win64_2-5-0\\Fooocus_win64_2-5-0\\python_embeded\\Lib\\site-packages\\gradio\\test_data\\cheetah2.jpg",
+      "filename": "cheetah2.jpg",
+      "has_unparsed": true,
+      "ai_likelihood": 10,
+      "unparsed_chunks": [
+        {
+          "key": "EXIF_Tag_59932",
+          "length": 8243,
+          "reasons": [
+            "Large unknown chunk (8243 chars)"
+          ],
+          "chunk_type": "exif",
+          "content_preview": "b'\\x1c\\xea\\x00\\x00\\x00\\x08\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x...",
+          "analysis_time_ms": 0.05830000009154901
+        }
+      ],
+      "file_size": 72783,
+      "format": "JPEG",
+      "error": null,
+      "parse_time_ms": 1.1725999993359437,
+      "performance_info": {
+        "file_access": 0.1788000008673407,
+        "image_open": 0.567600000067614,
+        "png_chunks": 0.005099998816149309,
+        "exif_data": 0.18590000036056153,
+        "metadata_analysis": 0.05830000009154901
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\João Daniel da Costa Pereira - ENG - ionic.png",
+      "filename": "João Daniel da Costa Pereira - ENG - ionic.png",
+      "has_unparsed": true,
+      "ai_likelihood": 5,
+      "unparsed_chunks": [
+        {
+          "key": "XML:com.adobe.xmp",
+          "length": 867,
+          "reasons": [
+            "AI keywords found: ['eta']"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>\n<x:xmpmeta xmlns:x='adobe:ns:meta/'>\n<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>\n\n <rdf:Description rdf:about=''\n  xmlns:Attri...",
+          "analysis_time_ms": 0.07539999933214858
+        }
+      ],
+      "file_size": 63148,
+      "format": "PNG",
+      "error": null,
+      "parse_time_ms": 1.8032999996648869,
+      "performance_info": {
+        "file_access": 0.10710000060498714,
+        "image_open": 0.5000000001018634,
+        "png_chunks": 1.0347999996156432,
+        "exif_data": 0.1343000003544148,
+        "metadata_analysis": 0.07539999933214858
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\Sem título.png",
+      "filename": "Sem título.png",
+      "has_unparsed": true,
+      "ai_likelihood": 5,
+      "unparsed_chunks": [
+        {
+          "key": "XML:com.adobe.xmp",
+          "length": 876,
+          "reasons": [
+            "AI keywords found: ['eta']"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "<?xpacket begin=\"﻿\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?> <x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"Adobe XMP Core 5.6-c145 79.163499, 2018/08/13-16:40:22        \"> <rdf:RDF xmlns:rdf=\"http://www.w3.org/...",
+          "analysis_time_ms": 0.0455999997939216
+        }
+      ],
+      "file_size": 651990,
+      "format": "PNG",
+      "error": null,
+      "parse_time_ms": 6.795899998905952,
+      "performance_info": {
+        "file_access": 0.08440000055998098,
+        "image_open": 0.2488999998604413,
+        "png_chunks": 6.412099999579368,
+        "exif_data": 0.018200000340584666,
+        "metadata_analysis": 0.08769999840296805
+      }
+    },
+    {
+      "path": "C:\\Users\\jonp6\\Downloads\\SPOILER_8264488086543538291.png",
+      "filename": "SPOILER_8264488086543538291.png",
+      "has_unparsed": true,
+      "ai_likelihood": 5,
+      "unparsed_chunks": [
+        {
+          "key": "XML:com.adobe.xmp",
+          "length": 876,
+          "reasons": [
+            "AI keywords found: ['eta']"
+          ],
+          "chunk_type": "unknown",
+          "content_preview": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"XMP Core 6.0.0\">\n   <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n      <rdf:Description rdf:about=\"\"\n            xmlns:dc=\"http://purl...",
+          "analysis_time_ms": 0.05680000140273478
+        }
+      ],
+      "file_size": 4173774,
+      "format": "PNG",
+      "error": null,
+      "parse_time_ms": 111.89329999979236,
+      "performance_info": {
+        "file_access": 0.051799999710056,
+        "image_open": 0.17889999980980065,
+        "png_chunks": 111.59950000001118,
+        "exif_data": 0.04079999962414149,
+        "metadata_analysis": 0.05680000140273478
+      }
+    }
+  ]
+}
