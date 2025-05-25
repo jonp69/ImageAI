@@ -31,7 +31,9 @@ class UnparsedMetadataScanner:
             'unparsed_chunks': defaultdict(list),
             'large_chunks': [],
             'suspicious_files': [],
-            'parsing_times': []  # New: store parsing times
+            'parsing_times': [],  # New: store parsing times
+            'directory_limits': {},  # New: track directory file limits
+            'limited_directories': []  # New: directories that hit the limit
         }
         
         # Known AI metadata patterns
@@ -268,7 +270,7 @@ class UnparsedMetadataScanner:
     
     def scan_directory(self, directory: str, recursive: bool = True, 
         extensions: list = None, max_files: int = None,
-        min_size_kb: int = 50) -> list:
+        min_size_kb: int = 50, max_files_per_dir: int = None) -> list:
         """Scan directory for images with unparsed metadata"""
         
         if extensions is None:
@@ -278,6 +280,8 @@ class UnparsedMetadataScanner:
         print(f"📁 Recursive: {recursive}")
         print(f"📄 Extensions: {extensions}")
         print(f"📏 Min file size: {min_size_kb}KB ({min_size_kb * 1024:,} bytes)")
+        if max_files_per_dir:
+            print(f"📂 Max files per subdirectory: {max_files_per_dir:,}")
         print(f"🚀 Will ramp up to 300+/sec before monitoring for slowdowns below 200/sec")
         
         # Performance monitoring variables
@@ -288,11 +292,16 @@ class UnparsedMetadataScanner:
         slow_detections = 0
         max_slow_detections = 3  # Abort after 3 consecutive slow periods
         
-        # Collect all image files
+        # Collect all image files with directory limiting
         image_files = []
         skipped_small = 0
+        directory_file_counts = defaultdict(int)  # Track files per directory
+        limited_dirs = []  # Track directories that hit the limit
         
         if recursive:
+            # Group files by directory first
+            dir_files = defaultdict(list)
+            
             for root, dirs, files in os.walk(directory):
                 for file in files:
                     if any(file.lower().endswith(ext) for ext in extensions):
@@ -300,31 +309,82 @@ class UnparsedMetadataScanner:
                         
                         # Check file size
                         if self.is_file_large_enough(file_path, min_size_kb):
-                            image_files.append(file_path)
-                            if max_files and len(image_files) >= max_files:
-                                break
+                            dir_files[root].append(file_path)
                         else:
                             skipped_small += 1
-                        
+            
+            # Apply per-directory limits and collect files
+            for dir_path, files_in_dir in dir_files.items():
+                files_to_add = files_in_dir
+                
+                if max_files_per_dir and len(files_in_dir) > max_files_per_dir:
+                    files_to_add = files_in_dir[:max_files_per_dir]
+                    limited_dirs.append({
+                        'directory': dir_path,
+                        'total_files': len(files_in_dir),
+                        'selected_files': max_files_per_dir,
+                        'skipped_files': len(files_in_dir) - max_files_per_dir
+                    })
+                    print(f"📂 Limited directory: {dir_path}")
+                    print(f"   📊 Found {len(files_in_dir)} files, taking first {max_files_per_dir}")
+                
+                image_files.extend(files_to_add)
+                directory_file_counts[dir_path] = len(files_to_add)
+                
+                # Check global max_files limit
                 if max_files and len(image_files) >= max_files:
+                    image_files = image_files[:max_files]
                     break
         else:
+            # Non-recursive: treat the main directory as a single unit
+            files_in_main_dir = []
             for file in os.listdir(directory):
                 file_path = os.path.join(directory, file)
                 if os.path.isfile(file_path) and any(file.lower().endswith(ext) for ext in extensions):
                     # Check file size
                     if self.is_file_large_enough(file_path, min_size_kb):
-                        image_files.append(file_path)
-                        if max_files and len(image_files) >= max_files:
-                            break
+                        files_in_main_dir.append(file_path)
                     else:
                         skipped_small += 1
+            
+            # Apply per-directory limit to main directory
+            if max_files_per_dir and len(files_in_main_dir) > max_files_per_dir:
+                image_files = files_in_main_dir[:max_files_per_dir]
+                limited_dirs.append({
+                    'directory': directory,
+                    'total_files': len(files_in_main_dir),
+                    'selected_files': max_files_per_dir,
+                    'skipped_files': len(files_in_main_dir) - max_files_per_dir
+                })
+                print(f"📂 Limited main directory: {directory}")
+                print(f"   📊 Found {len(files_in_main_dir)} files, taking first {max_files_per_dir}")
+            else:
+                image_files = files_in_main_dir
+            
+            directory_file_counts[directory] = len(image_files)
+            
+            # Apply global max_files limit
+            if max_files and len(image_files) > max_files:
+                image_files = image_files[:max_files]
         
-        self.stats['total_files'] = len(image_files) + skipped_small
+        # Store directory limiting stats
+        self.stats['directory_limits'] = dict(directory_file_counts)
+        self.stats['limited_directories'] = limited_dirs
+        
+        # Calculate total files found before limiting
+        total_files_found = sum(dir_info['total_files'] for dir_info in limited_dirs) + \
+                          sum(count for dir_path, count in directory_file_counts.items() 
+                              if not any(ld['directory'] == dir_path for ld in limited_dirs))
+        total_files_found += skipped_small
+        
+        self.stats['total_files'] = total_files_found
         self.stats['skipped_small_files'] = skipped_small
         
-        print(f"📊 Found {len(image_files) + skipped_small:,} total image files")
+        print(f"📊 Found {total_files_found:,} total image files")
         print(f"📏 Skipped {skipped_small:,} files under {min_size_kb}KB")
+        if limited_dirs:
+            total_skipped_by_limit = sum(ld['skipped_files'] for ld in limited_dirs)
+            print(f"📂 Limited {len(limited_dirs)} directories, skipped {total_skipped_by_limit:,} files")
         print(f"🔍 Scanning {len(image_files):,} files")
         
         # Scan files
@@ -460,100 +520,34 @@ class UnparsedMetadataScanner:
         self.stats['ramp_up_target'] = ramp_up_target_rate
         
         return unparsed_files
-    
-    def generate_performance_report(self):
-        """Generate performance troubleshooting report"""
-        if not self.stats['parsing_times']:
-            return
+
+    def save_limited_directories_report(self, output_file: str = None):
+        """Save a separate report of directories that were limited"""
+        if not self.stats['limited_directories']:
+            return None
         
-        # Sort by parsing time (slowest first)
-        sorted_times = sorted(self.stats['parsing_times'], 
-                            key=lambda x: x['parse_time_ms'], reverse=True)
+        if output_file is None:
+            output_file = self.generate_unique_filename("limited_directories_report", ".json")
         
-        # Calculate statistics
-        all_times = [t['parse_time_ms'] for t in self.stats['parsing_times']]
-        avg_time = sum(all_times) / len(all_times)
-        median_time = sorted(all_times)[len(all_times) // 2]
-        max_time = max(all_times)
-        min_time = min(all_times)
+        report = {
+            "scan_info": {
+                "timestamp": datetime.now().isoformat(),
+                "total_limited_directories": len(self.stats['limited_directories']),
+                "total_skipped_files": sum(ld['skipped_files'] for ld in self.stats['limited_directories'])
+            },
+            "limited_directories": self.stats['limited_directories'],
+            "directory_file_counts": self.stats['directory_limits']
+        }
         
-        print(f"\n⚡ PERFORMANCE ANALYSIS:")
-        print(f"📊 Parsing Time Statistics:")
-        print(f"  Average: {avg_time:.2f}ms")
-        print(f"  Median:  {median_time:.2f}ms")
-        print(f"  Fastest: {min_time:.2f}ms")
-        print(f"  Slowest: {max_time:.2f}ms")
-        
-        # Performance by format
-        format_times = defaultdict(list)
-        for timing in self.stats['parsing_times']:
-            format_times[timing['format']].append(timing['parse_time_ms'])
-        
-        print(f"\n📁 Average Time by Format:")
-        for fmt, times in format_times.items():
-            avg_fmt_time = sum(times) / len(times)
-            print(f"  {fmt}: {avg_fmt_time:.2f}ms ({len(times)} files)")
-        
-        # Show 10 slowest files with troubleshooting info
-        print(f"\n🐌 TOP 10 SLOWEST FILES (Troubleshooting):")
-        print("=" * 80)
-        
-        for i, timing in enumerate(sorted_times[:10]):
-            print(f"\n{i+1}. {timing['filename']}")
-            print(f"   ⏱️  Total time: {timing['parse_time_ms']:.2f}ms")
-            print(f"   📏 File size: {timing['file_size']/1024:.1f}KB")
-            print(f"   📄 Format: {timing['format']}")
-            print(f"   🔍 Chunks found: {timing['chunks_found']}")
-            print(f"   ❌ Has error: {timing['has_error']}")
-            
-            # Breakdown of where time was spent
-            breakdown = timing['performance_breakdown']
-            print(f"   📊 Time breakdown:")
-            print(f"      File access: {breakdown['file_access']:.2f}ms")
-            print(f"      Image open:  {breakdown['image_open']:.2f}ms")
-            print(f"      PNG chunks:  {breakdown['png_chunks']:.2f}ms")
-            print(f"      EXIF data:   {breakdown['exif_data']:.2f}ms")
-            print(f"      Analysis:    {breakdown['metadata_analysis']:.2f}ms")
-            
-            # Calculate efficiency (time per KB)
-            if timing['file_size'] > 0:
-                efficiency = timing['parse_time_ms'] / (timing['file_size'] / 1024)
-                print(f"   📈 Efficiency: {efficiency:.2f}ms/KB")
-            
-            # Identify potential issues
-            issues = []
-            if timing['parse_time_ms'] > avg_time * 3:
-                issues.append("Extremely slow (3x+ average)")
-            if breakdown['image_open'] > timing['parse_time_ms'] * 0.5:
-                issues.append("Slow image opening (corrupt/large file?)")
-            if breakdown['metadata_analysis'] > timing['parse_time_ms'] * 0.5:
-                issues.append("Slow metadata analysis (complex chunks?)")
-            if timing['file_size'] > 10 * 1024 * 1024:  # > 10MB
-                issues.append("Very large file")
-            if timing['has_error']:
-                issues.append("Parse error occurred")
-            
-            if issues:
-                print(f"   ⚠️  Potential issues: {', '.join(issues)}")
-        
-        # Find patterns in slow files
-        slow_files = sorted_times[:20]  # Top 20 slowest
-        slow_formats = defaultdict(int)
-        slow_sizes = []
-        
-        for timing in slow_files:
-            slow_formats[timing['format']] += 1
-            slow_sizes.append(timing['file_size'])
-        
-        print(f"\n🔍 SLOW FILE PATTERNS:")
-        print(f"📄 Formats in slowest 20:")
-        for fmt, count in sorted(slow_formats.items(), key=lambda x: x[1], reverse=True):
-            print(f"   {fmt}: {count} files")
-        
-        if slow_sizes:
-            avg_slow_size = sum(slow_sizes) / len(slow_sizes)
-            print(f"📏 Average size of slowest 20: {avg_slow_size/1024:.1f}KB")
-    
+        try:
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(report, f, indent=2, ensure_ascii=False)
+            print(f"📂 Limited directories report saved to: {output_file}")
+            return output_file
+        except Exception as e:
+            print(f"❌ Failed to save limited directories report: {e}")
+            return None
+
     def generate_report(self, unparsed_files: list, output_file: str = None, min_size_kb: int = 50):
         """Generate detailed report of unparsed metadata findings"""
         
@@ -598,14 +592,21 @@ class UnparsedMetadataScanner:
                 "total_files_found": self.stats['total_files'],
                 "skipped_small_files": self.stats['skipped_small_files'],
                 "files_scanned": self.stats['scanned_files'],
-                "scan_completed": not bool(self.stats.get('abort_reason')),  # New field
-                "abort_reason": self.stats.get('abort_reason'),  # New field
-                "aborted_at_file": self.stats.get('aborted_at_file'),  # New field
+                "scan_completed": not bool(self.stats.get('abort_reason')),
+                "abort_reason": self.stats.get('abort_reason'),
+                "aborted_at_file": self.stats.get('aborted_at_file'),
                 "files_with_unparsed_metadata": len(unparsed_files),
                 "likely_ai_generated": self.stats['ai_generated'],
-                "scan_errors": self.stats['errors']
+                "scan_errors": self.stats['errors'],
+                # New directory limiting info
+                "directory_limiting": {
+                    "limited_directories_count": len(self.stats['limited_directories']),
+                    "total_files_skipped_by_limits": sum(ld['skipped_files'] for ld in self.stats['limited_directories']) if self.stats['limited_directories'] else 0,
+                    "directory_file_counts": self.stats['directory_limits']
+                }
             },
-            "performance_stats": performance_stats,  # New section
+            "performance_stats": performance_stats,
+            "directory_limits_applied": self.stats['limited_directories'],  # New section
             "statistics": {
                 "unparsed_chunk_frequency": dict(self.stats['unparsed_chunks']),
                 "top_unparsed_chunks": sorted(
@@ -619,7 +620,7 @@ class UnparsedMetadataScanner:
             "all_unparsed_files": unparsed_files
         }
         
-        # Save report
+        # Save main report
         try:
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(report, f, indent=2, ensure_ascii=False)
@@ -633,7 +634,11 @@ class UnparsedMetadataScanner:
             print(f"💾 Emergency backup saved to: {emergency_file}")
             output_file = emergency_file
         
-        # Print summary with abort info
+        # Save separate limited directories report if any directories were limited
+        if self.stats['limited_directories']:
+            limited_dirs_file = self.save_limited_directories_report()
+        
+        # Print summary with directory limiting info
         print(f"\n📊 SCAN RESULTS:")
         if self.stats.get('abort_reason'):
             print(f"🚨 ABORTED: {self.stats['abort_reason']}")
@@ -641,10 +646,24 @@ class UnparsedMetadataScanner:
             print(f"⏱️  Time before abort: {self.stats.get('abort_time', 0):.1f}s")
         
         print(f"📁 Total files found: {self.stats['total_files']:,}")
+        if self.stats['limited_directories']:
+            total_skipped_by_limits = sum(ld['skipped_files'] for ld in self.stats['limited_directories'])
+            print(f"📂 Limited {len(self.stats['limited_directories'])} directories, skipped {total_skipped_by_limits:,} files")
         print(f"🔍 Files actually scanned: {self.stats['scanned_files']:,}")
         print(f"📝 Files with unparsed metadata: {len(unparsed_files):,}")
         print(f"🤖 Likely AI-generated: {self.stats['ai_generated']:,}")
         print(f"❌ Scan errors: {self.stats['errors']:,}")
+        
+        # Show limited directories
+        if self.stats['limited_directories']:
+            print(f"\n📂 DIRECTORIES LIMITED:")
+            for i, dir_info in enumerate(self.stats['limited_directories'][:10]):
+                rel_path = os.path.relpath(dir_info['directory'])
+                print(f"  {i+1}. {rel_path}")
+                print(f"     📊 {dir_info['total_files']} files found, {dir_info['selected_files']} scanned, {dir_info['skipped_files']} skipped")
+            
+            if len(self.stats['limited_directories']) > 10:
+                print(f"  ... and {len(self.stats['limited_directories']) - 10} more directories")
         
         # File size statistics
         if unparsed_files:
@@ -686,6 +705,8 @@ def main():
     parser.add_argument("directory", help="Directory to scan")
     parser.add_argument("--recursive", "-r", action="store_true", help="Scan recursively")
     parser.add_argument("--max-files", "-m", type=int, help="Maximum files to scan")
+    parser.add_argument("--max-files-per-dir", "-d", type=int, 
+                       help="Maximum files to scan per subdirectory")
     parser.add_argument("--output", "-o", help="Output report file (will be made unique if exists)")
     parser.add_argument("--extensions", "-e", nargs="+", 
                        default=['.png', '.jpg', '.jpeg', '.webp'],
@@ -705,7 +726,8 @@ def main():
         recursive=args.recursive,
         extensions=args.extensions,
         max_files=args.max_files,
-        min_size_kb=args.min_size
+        min_size_kb=args.min_size,
+        max_files_per_dir=args.max_files_per_dir
     )
     
     scanner.generate_report(unparsed_files, args.output, args.min_size)
