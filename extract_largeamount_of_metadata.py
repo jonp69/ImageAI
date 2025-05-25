@@ -31,9 +31,10 @@ class UnparsedMetadataScanner:
             'unparsed_chunks': defaultdict(list),
             'large_chunks': [],
             'suspicious_files': [],
-            'parsing_times': [],  # New: store parsing times
-            'directory_limits': {},  # New: track directory file limits
-            'limited_directories': []  # New: directories that hit the limit
+            'parsing_times': [],
+            'directory_limits': {},
+            'limited_directories': [],
+            'performance_limited_directories': []  # New: directories limited due to performance
         }
         
         # Known AI metadata patterns
@@ -268,10 +269,48 @@ class UnparsedMetadataScanner:
         
         return result
     
+    def detect_slow_directory(self, recent_files: list, performance_window: int = 50) -> dict:
+        """Detect if recent files indicate a slow directory pattern"""
+        if len(recent_files) < performance_window:
+            return {'is_slow': False}
+        
+        # Get the last N files
+        recent_batch = recent_files[-performance_window:]
+        
+        # Check if they're mostly from the same directory
+        directories = defaultdict(int)
+        slow_files = 0
+        
+        for file_info in recent_batch:
+            file_dir = os.path.dirname(file_info['filename']) if '/' in file_info['filename'] or '\\' in file_info['filename'] else 'root'
+            directories[file_dir] += 1
+            
+            # Consider file slow if it's 3x+ the median
+            if file_info['parse_time_ms'] > 30:  # Arbitrary threshold for "slow"
+                slow_files += 1
+        
+        # Find the dominant directory
+        dominant_dir = max(directories.items(), key=lambda x: x[1])
+        dominant_dir_name, file_count = dominant_dir
+        
+        # If 70%+ of recent files are from same directory and 40%+ are slow
+        if file_count >= performance_window * 0.7 and slow_files >= performance_window * 0.4:
+            avg_time = sum(f['parse_time_ms'] for f in recent_batch) / len(recent_batch)
+            return {
+                'is_slow': True,
+                'directory': dominant_dir_name,
+                'slow_file_ratio': slow_files / performance_window,
+                'directory_file_ratio': file_count / performance_window,
+                'avg_parse_time': avg_time,
+                'files_in_batch': file_count
+            }
+        
+        return {'is_slow': False}
+
     def scan_directory(self, directory: str, recursive: bool = True, 
         extensions: list = None, max_files: int = None,
-        min_size_kb: int = 50, max_files_per_dir: int = None) -> list:
-        """Scan directory for images with unparsed metadata"""
+        min_size_kb: int = 50, slowdown_threshold: int = 50) -> list:
+        """Scan directory for images with unparsed metadata with dynamic performance limiting"""
         
         if extensions is None:
             extensions = ['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tiff', '.tif']
@@ -280,8 +319,7 @@ class UnparsedMetadataScanner:
         print(f"📁 Recursive: {recursive}")
         print(f"📄 Extensions: {extensions}")
         print(f"📏 Min file size: {min_size_kb}KB ({min_size_kb * 1024:,} bytes)")
-        if max_files_per_dir:
-            print(f"📂 Max files per subdirectory: {max_files_per_dir:,}")
+        print(f"🐌 Slowdown detection threshold: {slowdown_threshold} files")
         print(f"🚀 Will ramp up to 300+/sec before monitoring for slowdowns below 200/sec")
         
         # Performance monitoring variables
@@ -292,112 +330,97 @@ class UnparsedMetadataScanner:
         slow_detections = 0
         max_slow_detections = 3  # Abort after 3 consecutive slow periods
         
-        # Collect all image files with directory limiting
+        # Dynamic directory limiting
+        directory_file_counts = defaultdict(int)
+        blocked_directories = set()  # Directories to skip due to performance
+        directory_slowdown_counts = defaultdict(int)  # Track slowdowns per directory
+        
+        # Collect all image files
         image_files = []
         skipped_small = 0
-        directory_file_counts = defaultdict(int)  # Track files per directory
-        limited_dirs = []  # Track directories that hit the limit
+        skipped_performance = 0
         
         if recursive:
-            # Group files by directory first
-            dir_files = defaultdict(list)
-            
             for root, dirs, files in os.walk(directory):
+                # Skip directories that have been blocked for performance
+                if root in blocked_directories:
+                    continue
+                
                 for file in files:
                     if any(file.lower().endswith(ext) for ext in extensions):
                         file_path = os.path.join(root, file)
                         
+                        # Check if this directory has been performance-limited
+                        if root in blocked_directories:
+                            skipped_performance += 1
+                            continue
+                        
                         # Check file size
                         if self.is_file_large_enough(file_path, min_size_kb):
-                            dir_files[root].append(file_path)
+                            image_files.append(file_path)
+                            directory_file_counts[root] += 1
+                            
+                            # Check global max_files limit
+                            if max_files and len(image_files) >= max_files:
+                                break
                         else:
                             skipped_small += 1
-            
-            # Apply per-directory limits and collect files
-            for dir_path, files_in_dir in dir_files.items():
-                files_to_add = files_in_dir
                 
-                if max_files_per_dir and len(files_in_dir) > max_files_per_dir:
-                    files_to_add = files_in_dir[:max_files_per_dir]
-                    limited_dirs.append({
-                        'directory': dir_path,
-                        'total_files': len(files_in_dir),
-                        'selected_files': max_files_per_dir,
-                        'skipped_files': len(files_in_dir) - max_files_per_dir
-                    })
-                    print(f"📂 Limited directory: {dir_path}")
-                    print(f"   📊 Found {len(files_in_dir)} files, taking first {max_files_per_dir}")
-                
-                image_files.extend(files_to_add)
-                directory_file_counts[dir_path] = len(files_to_add)
-                
-                # Check global max_files limit
                 if max_files and len(image_files) >= max_files:
-                    image_files = image_files[:max_files]
                     break
         else:
-            # Non-recursive: treat the main directory as a single unit
-            files_in_main_dir = []
+            # Non-recursive: scan main directory only
             for file in os.listdir(directory):
                 file_path = os.path.join(directory, file)
                 if os.path.isfile(file_path) and any(file.lower().endswith(ext) for ext in extensions):
                     # Check file size
                     if self.is_file_large_enough(file_path, min_size_kb):
-                        files_in_main_dir.append(file_path)
+                        image_files.append(file_path)
+                        directory_file_counts[directory] += 1
+                        
+                        # Check global max_files limit
+                        if max_files and len(image_files) >= max_files:
+                            break
                     else:
                         skipped_small += 1
-            
-            # Apply per-directory limit to main directory
-            if max_files_per_dir and len(files_in_main_dir) > max_files_per_dir:
-                image_files = files_in_main_dir[:max_files_per_dir]
-                limited_dirs.append({
-                    'directory': directory,
-                    'total_files': len(files_in_main_dir),
-                    'selected_files': max_files_per_dir,
-                    'skipped_files': len(files_in_main_dir) - max_files_per_dir
-                })
-                print(f"📂 Limited main directory: {directory}")
-                print(f"   📊 Found {len(files_in_main_dir)} files, taking first {max_files_per_dir}")
-            else:
-                image_files = files_in_main_dir
-            
-            directory_file_counts[directory] = len(image_files)
-            
-            # Apply global max_files limit
-            if max_files and len(image_files) > max_files:
-                image_files = image_files[:max_files]
         
-        # Store directory limiting stats
-        self.stats['directory_limits'] = dict(directory_file_counts)
-        self.stats['limited_directories'] = limited_dirs
-        
-        # Calculate total files found before limiting
-        total_files_found = sum(dir_info['total_files'] for dir_info in limited_dirs) + \
-                          sum(count for dir_path, count in directory_file_counts.items() 
-                              if not any(ld['directory'] == dir_path for ld in limited_dirs))
-        total_files_found += skipped_small
-        
-        self.stats['total_files'] = total_files_found
+        # Store initial stats
+        self.stats['total_files'] = len(image_files) + skipped_small
         self.stats['skipped_small_files'] = skipped_small
+        self.stats['directory_limits'] = dict(directory_file_counts)
         
-        print(f"📊 Found {total_files_found:,} total image files")
+        print(f"📊 Found {len(image_files) + skipped_small:,} total image files")
         print(f"📏 Skipped {skipped_small:,} files under {min_size_kb}KB")
-        if limited_dirs:
-            total_skipped_by_limit = sum(ld['skipped_files'] for ld in limited_dirs)
-            print(f"📂 Limited {len(limited_dirs)} directories, skipped {total_skipped_by_limit:,} files")
         print(f"🔍 Scanning {len(image_files):,} files")
         
-        # Scan files
+        # Scan files with dynamic performance monitoring
         unparsed_files = []
         start_time = time.time()
-        window_start_time = start_time
         last_100_start = start_time
+        processed_files = []  # Track recent file processing info
         
-        for i, image_path in enumerate(image_files):
+        i = 0
+        while i < len(image_files):
             current_time = time.time()
+            image_path = image_files[i]
+            current_dir = os.path.dirname(image_path)
+            
+            # Skip if directory has been performance-blocked
+            if current_dir in blocked_directories:
+                i += 1
+                continue
             
             result = self.scan_image_fast(image_path)
             self.stats['scanned_files'] += 1
+            
+            # Track file processing info for performance analysis
+            processed_files.append({
+                'filename': image_path,
+                'directory': current_dir,
+                'parse_time_ms': result['parse_time_ms'],
+                'file_size': result['file_size'],
+                'index': i
+            })
             
             if result['has_unparsed']:
                 unparsed_files.append(result)
@@ -452,53 +475,61 @@ class UnparsedMetadataScanner:
                               f"Rate: {window_rate:.1f}/s (target: {min_acceptable_rate}/s) | "
                               f"Avg parse: {avg_parse_time:.1f}ms | ETA: {eta:.0f}s")
                         
-                        # Show immediate diagnostics
-                        if slow_detections == 1:
-                            print(f"   📊 Diagnostics:")
-                            print(f"   - Recent avg parse time: {avg_parse_time:.1f}ms")
-                            if self.stats['parsing_times']:
-                                recent_max = max(t['parse_time_ms'] for t in self.stats['parsing_times'][-performance_window:])
-                                recent_slow_files = [t['filename'] for t in self.stats['parsing_times'][-performance_window:] 
-                                                   if t['parse_time_ms'] > avg_parse_time * 2]
-                                print(f"   - Slowest recent file: {recent_max:.1f}ms")
-                                if recent_slow_files:
-                                    print(f"   - Files taking 2x+ avg time: {len(recent_slow_files)}")
+                        # Check if slowdown is due to a specific directory
+                        slowdown_analysis = self.detect_slow_directory(processed_files, slowdown_threshold)
                         
-                        # Abort after consecutive slow periods
-                        if slow_detections >= max_slow_detections:
-                            print(f"\n🚨 ABORTING: {slow_detections} consecutive slow periods detected!")
-                            print(f"📊 Processed {i+1} files in {overall_elapsed:.1f}s before aborting")
-                            print(f"🐌 Current rate: {window_rate:.1f} files/second (target: {min_acceptable_rate})")
-                            print(f"✅ Ramp-up was completed successfully before slowdown")
+                        if slowdown_analysis['is_slow']:
+                            slow_dir = slowdown_analysis['directory']
+                            directory_slowdown_counts[slow_dir] += 1
                             
-                            # Store abort reason in stats
-                            self.stats['abort_reason'] = f"Processing rate dropped to {window_rate:.1f} files/sec after ramp-up"
-                            self.stats['aborted_at_file'] = i + 1
-                            self.stats['abort_time'] = overall_elapsed
-                            self.stats['ramp_up_completed'] = True
+                            print(f"   🎯 Slowdown detected in directory: {os.path.relpath(slow_dir)}")
+                            print(f"   📊 {slowdown_analysis['files_in_batch']}/{slowdown_threshold} recent files from this directory")
+                            print(f"   ⏱️  Avg parse time: {slowdown_analysis['avg_parse_time']:.1f}ms")
+                            print(f"   🐌 Slow file ratio: {slowdown_analysis['slow_file_ratio']*100:.1f}%")
                             
-                            break
-                    else:
-                        # Reset slow detection counter if we're back to normal speed
-                        if slow_detections > 0:
-                            print(f"✅ Speed recovered: {window_rate:.1f}/s (was slow for {slow_detections} windows)")
-                        slow_detections = 0
-                        status_emoji = "🔥" if window_rate > 300 else "⚡"
-                        print(f"{status_emoji} Progress: {i+1}/{len(image_files)} | "
-                              f"Rate: {window_rate:.1f}/s | Overall: {overall_rate:.1f}/s | "
-                              f"Parse: {avg_parse_time:.1f}ms | ETA: {eta:.0f}s")
+                            # Block directory after 2 slowdown detections
+                            if directory_slowdown_counts[slow_dir] >= 2:
+                                blocked_directories.add(slow_dir)
+                                
+                                # Count remaining files in this directory
+                                remaining_files = sum(1 for path in image_files[i+1:] 
+                                                    if os.path.dirname(path) == slow_dir)
+                                
+                                self.stats['performance_limited_directories'].append({
+                                    'directory': slow_dir,
+                                    'slowdown_count': directory_slowdown_counts[slow_dir],
+                                    'avg_parse_time': slowdown_analysis['avg_parse_time'],
+                                    'files_processed_before_block': directory_file_counts[slow_dir] - remaining_files,
+                                    'files_blocked': remaining_files,
+                                    'blocked_at_file_index': i + 1
+                                })
+                                
+                                print(f"   🚫 BLOCKING DIRECTORY: {os.path.relpath(slow_dir)}")
+                                print(f"   📂 Skipping {remaining_files} remaining files in this directory")
+                                
+                                # Reset slow detection counter since we resolved the issue
+                                slow_detections = 0
                 
-                # Reset window timer - THIS MUST BE AFTER ALL THE CHECKS
+                # Reset window timer
                 last_100_start = current_time
-        
-        # Quick progress updates during ramp-up for slower iterations
-        if not ramp_up_completed and i % 50 == 0:
-            elapsed = time.time() - start_time
-            rate = (i + 1) / elapsed if elapsed > 0 else 0
-            progress_to_target = (rate / ramp_up_target_rate) * 100
-            print(f"⏳ Warming up: {rate:.1f}/s ({progress_to_target:.0f}% of {ramp_up_target_rate}/s target) - file {i+1}")
+            
+            # Quick progress updates during ramp-up for slower iterations
+            elif not ramp_up_completed and i % 50 == 0:
+                elapsed = time.time() - start_time
+                rate = (i + 1) / elapsed if elapsed > 0 else 0
+                progress_to_target = (rate / ramp_up_target_rate) * 100
+                print(f"⏳ Warming up: {rate:.1f}/s ({progress_to_target:.0f}% of {ramp_up_target_rate}/s target) - file {i+1}")
+            
+            i += 1
         
         elapsed = time.time() - start_time
+        
+        # Update stats with performance blocking info
+        if blocked_directories:
+            total_blocked_files = sum(ld['files_blocked'] for ld in self.stats['performance_limited_directories'])
+            print(f"\n🚫 PERFORMANCE BLOCKING SUMMARY:")
+            print(f"📂 Blocked {len(blocked_directories)} directories due to slowdowns")
+            print(f"📊 Skipped {total_blocked_files} files in blocked directories")
         
         # Final summary
         if self.stats.get('abort_reason'):
@@ -612,7 +643,16 @@ class UnparsedMetadataScanner:
                 "top_unparsed_chunks": sorted(
                     [(k, len(v)) for k, v in self.stats['unparsed_chunks'].items()],
                     key=lambda x: x[1], reverse=True
-                )[:20]
+                )[:20],
+                "file_size_distribution": {
+                    "total_files": len(unparsed_files),
+                    "average_size_kb": sum(f['file_size'] for f in unparsed_files) / 1024 / len(unparsed_files) if unparsed_files else 0,
+                    "size_kb_percentiles": {
+                        "p25": sorted(f['file_size'] for f in unparsed_files)[len(unparsed_files) // 4] / 1024 if unparsed_files else 0,
+                        "p50": sorted(f['file_size'] for f in unparsed_files)[len(unparsed_files) // 2] / 1024 if unparsed_files else 0,
+                        "p75": sorted(f['file_size'] for f in unparsed_files)[3 * len(unparsed_files) // 4] / 1024 if unparsed_files else 0
+                    }
+                }
             },
             "high_priority_files": [
                 f for f in unparsed_files if f['ai_likelihood'] > 50
@@ -705,8 +745,8 @@ def main():
     parser.add_argument("directory", help="Directory to scan")
     parser.add_argument("--recursive", "-r", action="store_true", help="Scan recursively")
     parser.add_argument("--max-files", "-m", type=int, help="Maximum files to scan")
-    parser.add_argument("--max-files-per-dir", "-d", type=int, 
-                       help="Maximum files to scan per subdirectory")
+    parser.add_argument("--slowdown-threshold", "-t", type=int, default=50,
+                       help="Number of recent files to analyze for directory slowdowns (default: 50)")
     parser.add_argument("--output", "-o", help="Output report file (will be made unique if exists)")
     parser.add_argument("--extensions", "-e", nargs="+", 
                        default=['.png', '.jpg', '.jpeg', '.webp'],
@@ -727,7 +767,7 @@ def main():
         extensions=args.extensions,
         max_files=args.max_files,
         min_size_kb=args.min_size,
-        max_files_per_dir=args.max_files_per_dir
+        slowdown_threshold=args.slowdown_threshold  # Fix: pass the correct parameter
     )
     
     scanner.generate_report(unparsed_files, args.output, args.min_size)
