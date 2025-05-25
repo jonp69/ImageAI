@@ -200,73 +200,43 @@ class UnparsedMetadataScanner:
                             # Just log that this platform exists here
                             platform_info = {
                                 'platform': analysis['platform'],
-                        
-                        timing_breakdown['metadata_analysis'] += analysis_time
-                        
-                        if analysis['is_unparsed']:
-                            result['has_unparsed'] = True
-                            result['ai_likelihood'] += analysis['ai_likelihood']
-                            result['unparsed_chunks'].append({
-                                'key': key,
-                                'length': len(value),
-                                'reasons': analysis['reasons'],
-                                'chunk_type': analysis['chunk_type'],
-                                'content_preview': value[:200] + '...' if len(value) > 200 else value,
-                                'analysis_time_ms': analysis_time  # New: per-chunk timing
-                            })
+                                'chunk_key': key,
+                                'size_bytes': len(value)
+                            }
+                            result['known_formats'].append(platform_info)
+                            
+                        elif analysis['needs_investigation']:
+                            # Collect info for unknown format
+                            unknown_info = {
+                                'chunk_key': key,
+                                'structure_info': analysis['structure_info'],
+                                'content_sample': analysis['content_sample'],
+                                'size_bytes': len(value)
+                            }
+                            result['unknown_formats'].append(unknown_info)
                 
-                timing_breakdown['png_chunks'] = (time.perf_counter() - png_start) * 1000
-                
-                # Time EXIF processing
-                exif_start = time.perf_counter()
+                # Fast EXIF discovery (same approach)
                 exif = img.getexif()
                 if exif:
                     for tag_id, value in exif.items():
-                        tag_name = TAGS.get(tag_id, f"Tag_{tag_id}")
-                        value_str = str(value)
-                        
-                        if len(value_str) > 100:  # Large EXIF fields
-                            analysis_start = time.perf_counter()
-                            analysis = self.is_unparsed_metadata(tag_name, value_str)
-                            analysis_time = (time.perf_counter() - analysis_start) * 1000
+                        if len(str(value)) > 100:  # Only check large EXIF fields
+                            tag_name = f"EXIF_{tag_id}"
+                            analysis = self.is_unparsed_metadata(tag_name, str(value))
                             
-                            timing_breakdown['metadata_analysis'] += analysis_time
-                            
-                            if analysis['is_unparsed']:
-                                result['has_unparsed'] = True
-                                result['ai_likelihood'] += analysis['ai_likelihood']
-                                result['unparsed_chunks'].append({
-                                    'key': f'EXIF_{tag_name}',
-                                    'length': len(value_str),
-                                    'reasons': analysis['reasons'],
-                                    'chunk_type': 'exif',
-                                    'content_preview': value_str[:200] + '...' if len(value_str) > 200 else value_str,
-                                    'analysis_time_ms': analysis_time
-                                })
-                
-                timing_breakdown['exif_data'] = (time.perf_counter() - exif_start) * 1000
+                            if analysis['needs_investigation']:
+                                unknown_info = {
+                                    'chunk_key': tag_name,
+                                    'structure_info': analysis['structure_info'],
+                                    'content_sample': analysis['content_sample'],
+                                    'size_bytes': len(str(value))
+                                }
+                                result['unknown_formats'].append(unknown_info)
                 
         except Exception as e:
             result['error'] = str(e)
             self.stats['errors'] += 1
         
-        # Calculate total time
-        total_time = time.perf_counter() - start_time
-        result['parse_time_ms'] = total_time * 1000
-        result['performance_info'] = timing_breakdown
-        
-        # Store timing info for statistics
-        timing_record = {
-            'filename': result['filename'],
-            'parse_time_ms': result['parse_time_ms'],
-            'file_size': result['file_size'],
-            'format': result['format'],
-            'chunks_found': len(result['unparsed_chunks']),
-            'has_error': result['error'] is not None,
-            'performance_breakdown': timing_breakdown
-        }
-        self.stats['parsing_times'].append(timing_record)
-        
+        result['parse_time_ms'] = (time.perf_counter() - start_time) * 1000
         return result
     
     def detect_slow_directory(self, recent_files: list, performance_window: int = 50) -> dict:
@@ -309,8 +279,8 @@ class UnparsedMetadataScanner:
 
     def scan_directory(self, directory: str, recursive: bool = True, 
         extensions: list = None, max_files: int = None,
-        min_size_kb: int = 50, slowdown_threshold: int = 50) -> list:
-        """Scan directory for images with unparsed metadata with dynamic performance limiting"""
+        min_size_kb: int = 50, slowdown_threshold: int = 50) -> dict:
+        """Scan directory for metadata discovery (not parsing)"""
         
         if extensions is None:
             extensions = ['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tiff', '.tif']
@@ -909,37 +879,34 @@ class UnparsedMetadataScanner:
             avg_slow_size = sum(f['file_size'] for f in slow_files[-20:]) / len(slow_files[-20:]) / 1024
             print(f"📏 Average size of slowest 20: {avg_slow_size:.1f}KB")
     
-def main():
-    parser = argparse.ArgumentParser(description="Scan large image datasets for unparsed metadata")
-    parser.add_argument("directory", help="Directory to scan")
-    parser.add_argument("--recursive", "-r", action="store_true", help="Scan recursively")
-    parser.add_argument("--max-files", "-m", type=int, help="Maximum files to scan")
-    parser.add_argument("--slowdown-threshold", "-t", type=int, default=50,
-                       help="Number of recent files to analyze for directory slowdowns (default: 50)")
-    parser.add_argument("--output", "-o", help="Output report file (will be made unique if exists)")
-    parser.add_argument("--extensions", "-e", nargs="+", 
-                       default=['.png', '.jpg', '.jpeg', '.webp'],
-                       help="File extensions to scan")
-    parser.add_argument("--min-size", "-s", type=int, default=50,
-                       help="Minimum file size in KB (default: 50)")
-    
-    args = parser.parse_args()
-    
-    if not os.path.exists(args.directory):
-        print(f"❌ Directory not found: {args.directory}")
-        sys.exit(1)
-    
-    scanner = UnparsedMetadataScanner()
-    unparsed_files = scanner.scan_directory(
-        args.directory, 
-        recursive=args.recursive,
-        extensions=args.extensions,
-        max_files=args.max_files,
-        min_size_kb=args.min_size,
-        slowdown_threshold=args.slowdown_threshold
-    )
-    
-    scanner.generate_report(unparsed_files, args.output, args.min_size)
-
-if __name__ == "__main__":
-    main()
+    def main():
+        parser = argparse.ArgumentParser(description="Scan large image datasets for unparsed metadata")
+        parser.add_argument("directory", help="Directory to scan")
+        parser.add_argument("--recursive", "-r", action="store_true", help="Scan recursively")
+        parser.add_argument("--max-files", "-m", type=int, help="Maximum files to scan")
+        parser.add_argument("--slowdown-threshold", "-t", type=int, default=50,
+                           help="Number of recent files to analyze for directory slowdowns (default: 50)")
+        parser.add_argument("--output", "-o", help="Output report file (will be made unique if exists)")
+        parser.add_argument("--extensions", "-e", nargs="+", 
+                           default=['.png', '.jpg', '.jpeg', '.webp'],
+                           help="File extensions to scan")
+        parser.add_argument("--min-size", "-s", type=int, default=50,
+                           help="Minimum file size in KB (default: 50)")
+        
+        args = parser.parse_args()
+        
+        if not os.path.exists(args.directory):
+            print(f"❌ Directory not found: {args.directory}")
+            sys.exit(1)
+        
+        scanner = UnparsedMetadataScanner()
+        scan_results = scanner.scan_directory(
+            args.directory, 
+            recursive=args.recursive,
+            extensions=args.extensions,
+            max_files=args.max_files,
+            min_size_kb=args.min_size,
+            slowdown_threshold=args.slowdown_threshold
+        )
+        
+        scanner.generate_discovery_report(scan_results, args.output)
